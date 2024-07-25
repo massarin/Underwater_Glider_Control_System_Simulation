@@ -1,6 +1,8 @@
 
 from typing import Union
 
+import SimMath
+
 
 
 """
@@ -8,53 +10,6 @@ This is the Glider's control system module.
 
 It provides a PID controller class, a state machine class, and logging.
 """
-
-
-
-
-
-
-def clamp_mag(val: float, max_mag: float) -> float:
-    """
-    Clamps the value `val` between -max_mag and max_mag.
-
-    Args:
-        val (float): The value to be clamped.
-        max_mag (float): The maximum magnitude allowed.
-
-    Returns:
-        float: The clamped value.
-
-    """
-    
-    if val > max_mag:
-        return max_mag
-
-    if val < -max_mag:
-        return -max_mag
-
-    return val
-
-
-
-
-def sign(val: Union[int, float]) -> int:
-    """
-    Returns the sign of a given value.
-
-    Args:
-        val (int or float): The value to determine the sign of.
-
-    Returns:
-        int: 1 if the value is positive, 0 if the value is zero, -1 if the value is negative.
-    """
-    if val > 0:
-        return 1
-    
-    if val == 0:
-        return 0
-    
-    return -1
 
 
 
@@ -131,7 +86,7 @@ class PIDController:
         error = target - input
 
         # Integral windup prevention
-        self.integral = clamp_mag(self.integral + (error * time_delta), self.i_limit)
+        self.integral = SimMath.clamp_mag(self.integral + (error * time_delta), self.i_limit)
 
         # Derivative kickback prevention
         derivative = (input - self.prev_input) / time_delta
@@ -143,7 +98,7 @@ class PIDController:
         self.prev_time = time
         self.prev_input = input
 
-        return clamp_mag(output, self.output_limit)
+        return SimMath.clamp_mag(output, self.output_limit)
 
 
 
