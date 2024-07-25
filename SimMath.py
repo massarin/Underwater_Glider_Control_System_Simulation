@@ -1,21 +1,29 @@
 
 from typing import Union
 
+import numpy as np
 
 
-class vector:
+
+class Vector:
     """
     Represents a vector in three-dimensional space.
 
+    Wrapper around a numpy.ndarray
+
     Attributes:
-        x (float): The x-coordinate of the vector.
-        y (float): The y-coordinate of the vector.
-        z (float): The z-coordinate of the vector.
+        vec (numpy.ndarray): A numpy array representing the vector's coordinates in x, y, and z directions.
+
+    Methods:
+        __init__(self, x: float = 0, y: float = 0, z: float = 0): Initializes a Vector object with the given coordinates.
+        x(self) -> float: Returns the x-coordinate value of the vector.
+        y(self) -> float: Returns the y-coordinate value of the vector.
+        z(self) -> float: Returns the z-coordinate value of the vector.
     """
 
     def __init__(self, x: float = 0, y: float = 0, z: float = 0):
         """
-        Initializes an instance of the ClassName class.
+        Initializes a Vector object with the given coordinates.
 
         Args:
             x (float): The x-coordinate value (default is 0).
@@ -23,9 +31,34 @@ class vector:
             z (float): The z-coordinate value (default is 0).
         """
 
-        self.x = x
-        self.y = y
-        self.z = z
+        self.vec : np.ndarray = np.array([x, y, z])
+
+    def x(self) -> float:
+        """
+        Returns the x-coordinate value of the vector.
+
+        Returns:
+            float: The x-coordinate value.
+        """
+        return self.vec[0]
+
+    def y(self) -> float:
+        """
+        Returns the y-coordinate value of the vector.
+
+        Returns:
+            float: The y-coordinate value.
+        """
+        return self.vec[1]
+
+    def z(self) -> float:
+        """
+        Returns the z-coordinate value of the vector.
+
+        Returns:
+            float: The z-coordinate value.
+        """
+        return self.vec[2]
 
 
 
