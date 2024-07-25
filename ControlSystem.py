@@ -1,9 +1,15 @@
 
+from typing import Union
+
+
+
 """
 This is the Glider's control system module.
 
 It provides a PID controller class, a state machine class, and logging.
 """
+
+
 
 
 
@@ -28,6 +34,27 @@ def clamp_mag(val: float, max_mag: float) -> float:
         return -max_mag
 
     return val
+
+
+
+
+def sign(val: Union[int, float]) -> int:
+    """
+    Returns the sign of a given value.
+
+    Args:
+        val (int or float): The value to determine the sign of.
+
+    Returns:
+        int: 1 if the value is positive, 0 if the value is zero, -1 if the value is negative.
+    """
+    if val > 0:
+        return 1
+    
+    if val == 0:
+        return 0
+    
+    return -1
 
 
 
