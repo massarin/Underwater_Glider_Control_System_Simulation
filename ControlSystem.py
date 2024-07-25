@@ -122,4 +122,46 @@ class PIDController:
 
 
 
+"""
+Typedef for the StateMachine class
 
+TODO: This may need to be a full class
+"""
+State = int
+diving = State(0)
+surfacing = State(1)
+
+
+
+
+class StateMachine:
+    """
+    A class representing a state machine.
+
+    TODO: Very limited, rules for state transition are not defined
+
+    Attributes:
+        state_graph (dict[State, list[State]]): A dictionary representing the state graph.
+        initial_state (State): The initial state of the state machine.
+        state (State): The current state of the state machine.
+    """
+
+    def __init__(self, state_graph: dict[State, list[State]], initial_state: State) -> None:
+        """
+        Initializes a new instance of the StateMachine class.
+
+        Args:
+            state_graph (dict[State, list[State]]): A dictionary representing the state graph.
+            initial_state (State): The initial state of the state machine.
+        """
+
+        self.state = initial_state
+        self.state_graph = state_graph
+    
+
+    def next(self) -> None:
+        """
+        Moves the state machine to the next state.
+        """
+
+        self.state = self.state_graph[self.state][0]
