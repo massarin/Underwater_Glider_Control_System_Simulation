@@ -1,6 +1,4 @@
 
-from typing import Union
-
 import numpy as np
 
 
@@ -33,31 +31,49 @@ class Vector:
 
         self.vec : np.ndarray = np.array([x, y, z])
 
-    def x(self) -> float:
+
+
+    def x(self, set: float | int | None = None) -> float:
         """
         Returns the x-coordinate value of the vector.
 
         Returns:
             float: The x-coordinate value.
         """
+
+        if set:
+            self.vec[0] = set
+
         return self.vec[0]
 
-    def y(self) -> float:
+
+
+    def y(self, set: float | int | None = None) -> float:
         """
         Returns the y-coordinate value of the vector.
 
         Returns:
             float: The y-coordinate value.
         """
+
+        if set:
+            self.vec[0] = set
+
         return self.vec[1]
 
-    def z(self) -> float:
+
+
+    def z(self, set: float | int | None = None) -> float:
         """
         Returns the z-coordinate value of the vector.
 
         Returns:
             float: The z-coordinate value.
         """
+
+        if set:
+            self.vec[0] = set
+
         return self.vec[2]
     
 
@@ -85,20 +101,43 @@ class Vector:
     
 
 
+    def dot(self, other: 'Vector') -> float:
+        return np.dot(self.vec, other.vec)
+    
 
-    def __mul__(self, scalar: int | float | 'Vector') -> 'Vector':
+
+    def __add__(self, other: 'Vector') -> 'Vector':
         """
-        Performs scalar multiplication on the vector.
+        Performs component-wise addition with another vector.
 
         Args:
-            scalar (int or float): The scalar value to multiply the vector by.
+            other (Vector): Another vector to perform addition with.
 
         Returns:
-            Vector: A new Vector instance representing the result of the scalar multiplication.
+            Vector: A new Vector instance representing the result of the addition.
+        """
+
+        added_vec = self.vec + other.vec
+        return Vector(added_vec[0], added_vec[1], added_vec[2])
+    
+
+
+
+    def __mul__(self, scalar: int | float) -> 'Vector':
+        """
+        Multiply the vector by a scalar or perform dot product with another vector.
+
+        Parameters:
+            scalar (int | float | None): The scalar value to multiply the vector by. Defaults to None.
+            other (Vector | None): Another vector to perform dot product with. Defaults to None.
+
+        Returns:
+            Vector | float | None: If scalar is provided, returns a new Vector object representing the result of the multiplication.
+            If other is provided, returns the dot product of the two vectors as a float.
+            If neither scalar nor other is provided, returns None.
         """
 
         multiplied_vec = self.vec * scalar
-
         return Vector(multiplied_vec[0], multiplied_vec[1], multiplied_vec[2])
     
 
