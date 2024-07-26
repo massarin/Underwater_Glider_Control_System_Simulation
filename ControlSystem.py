@@ -1,6 +1,8 @@
 
 import typing
 
+import numpy as np
+
 import SimMath
 from SimMath import Vector
 
@@ -11,6 +13,16 @@ This is the Glider's control system module.
 
 It provides a PID controller class, a state machine class, and logging.
 """
+
+
+
+class Logger:
+
+    def __init__(self) -> None:
+
+        self.glider_log: list = []
+
+        self.control_log: list = []
 
 
 
@@ -195,16 +207,20 @@ class ControlSystem:
 
 
         # Glide path parameters
-
         self.min_depth: float = -20
         self.max_depth: float = -70
         self.target_depth: float = self.min_depth
+
+        # Logging
+        self.logger = Logger()
 
 
     
     def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, time: float) -> Vector:
 
         self.time = time
+
+        self.logger.glider_log.append([time, position.z(), velocity.z(), acceleration.z()])
 
         if time < self.prev_update_time + self.period:
             return self.prev_command
@@ -230,6 +246,8 @@ class ControlSystem:
         pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, velocity.z(), time)
         pid_v_acc_output = self.pid_v_acc.update(pid_v_vel_output, acceleration.z(), time)
 
+
+        self.logger.control_log.append([time, self.target_depth, pid_depth_output, pid_v_vel_output, pid_v_acc_output])
 
         command = Vector(0.0, 0.0, pid_v_acc_output)
 

@@ -77,11 +77,13 @@ class Glider:
 
         self.acceleration = self.body.compute_acceleration(total_force)
         self.velocity += self.acceleration * time_delta
-        self.position += self.acceleration * time_delta
+        self.position += self.velocity * time_delta
 
         # The Glider cannot leave the water
         if self.position.z() > 0:
+            print(self.position.z())
             self.position.z(-0.1)
+            print(self.position.z())
 
             if self.velocity.z() > 0:
                 self.velocity.z(0)
