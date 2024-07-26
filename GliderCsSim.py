@@ -11,7 +11,7 @@ from SimMath import Vector
 
 
 def do_sim() -> None:
-    body = Glider.GliderBody(mass = 27.0, drag_coefficient = 0.0)
+    body = Glider.GliderBody(mass = 27.0, drag_coefficient = 0.03)
 
     control_system = ControlSystem.ControlSystem()
 

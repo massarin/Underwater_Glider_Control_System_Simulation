@@ -81,9 +81,7 @@ class Glider:
 
         # The Glider cannot leave the water
         if self.position.z() > 0:
-            print(self.position.z())
             self.position.z(-0.1)
-            print(self.position.z())
 
             if self.velocity.z() > 0:
                 self.velocity.z(0)
