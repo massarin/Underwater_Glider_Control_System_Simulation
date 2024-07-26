@@ -170,6 +170,16 @@ class ControlSystem:
 
         self.state_machine: StateMachine = StateMachine(state_graph, diving)
 
+        self.frequency: int = 10
+
+        self.period: float = 1.0 / self.frequency
+
+        self.time: float = 0
+
+        self.prev_update_time: float = self.time
+
+        self.prev_command: Vector = Vector()
+
 
 
         # Create cascading PID controllers
@@ -194,6 +204,15 @@ class ControlSystem:
     
     def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, time: float) -> Vector:
 
+        self.time = time
+
+        if time < self.prev_update_time + self.period:
+            return self.prev_command
+        
+
+        self.prev_update_time = time
+
+
         # Swap states when needed
         # TODO: There needs to be a better way to do this (the state machine should do it with a single method call)
         if self.state_machine.state == diving:
@@ -206,14 +225,14 @@ class ControlSystem:
                 self.state_machine.next()
 
             
-
-
         # depth -> v_vel -> v_acc
         pid_depth_output = self.pid_depth.update(self.target_depth, position.z(), time)
         pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, velocity.z(), time)
         pid_v_acc_output = self.pid_v_acc.update(pid_v_vel_output, acceleration.z(), time)
 
 
+        command = Vector(0.0, 0.0, pid_v_acc_output)
 
-        
-        return Vector(0.0, 0.0, pid_v_acc_output)
+        self.prev_command = command
+
+        return command
