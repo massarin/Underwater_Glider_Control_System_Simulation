@@ -41,7 +41,7 @@ class Vector:
             float: The x-coordinate value.
         """
 
-        if set:
+        if set is not None:
             self.vec[0] = set
 
         return self.vec[0]
@@ -56,8 +56,8 @@ class Vector:
             float: The y-coordinate value.
         """
 
-        if set:
-            self.vec[0] = set
+        if set is not None:
+            self.vec[1] = set
 
         return self.vec[1]
 
@@ -71,8 +71,8 @@ class Vector:
             float: The z-coordinate value.
         """
 
-        if set:
-            self.vec[0] = set
+        if set is not None:
+            self.vec[2] = set
 
         return self.vec[2]
     
