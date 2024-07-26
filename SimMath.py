@@ -84,7 +84,9 @@ class Vector:
         return Vector(normalized_vec[0], normalized_vec[1], normalized_vec[2])
     
 
-    def __mul__(self, scalar: Union[int, float]) -> 'Vector':
+
+
+    def __mul__(self, scalar: int | float | 'Vector') -> 'Vector':
         """
         Performs scalar multiplication on the vector.
 
@@ -100,7 +102,9 @@ class Vector:
         return Vector(multiplied_vec[0], multiplied_vec[1], multiplied_vec[2])
     
 
-    def __truediv__(self, scalar: Union[int, float]) -> 'Vector':
+
+
+    def __truediv__(self, scalar: int | float) -> 'Vector':
         """
         Performs scalar division on the vector.
 
@@ -115,6 +119,8 @@ class Vector:
 
         return Vector(divided_vec[0], divided_vec[1], divided_vec[2])
     
+
+
     def __neg__(self) -> 'Vector':
         """
         Performs unary negation on the vector.
@@ -122,10 +128,11 @@ class Vector:
         Returns:
             Vector: A new Vector instance representing the negation of the vector.
         """
-        
+
         negated_vec = -self.vec
 
         return Vector(negated_vec[0], negated_vec[1], negated_vec[2])
+
 
 
 
@@ -156,7 +163,7 @@ def clamp_mag(val: float, max_mag: float) -> float:
 
 
 
-def sign(val: Union[int, float]) -> int:
+def sign(val: int | float) -> int:
     """
     Returns the sign of a given value.
 
