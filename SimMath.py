@@ -59,6 +59,61 @@ class Vector:
             float: The z-coordinate value.
         """
         return self.vec[2]
+    
+
+    def magnitude(self) -> float:
+        return float(np.linalg.norm(self.vec))
+
+    
+
+    def normalized(self) -> 'Vector':
+        """
+        Returns a normalized version of the vector.
+
+        Returns:
+            Vector: A new Vector instance with normalized coordinates.
+        """
+
+        norm = np.linalg.norm(self.vec)
+
+        if norm == 0:
+            return Vector(0, 0, 0)
+        
+        normalized_vec = self.vec / norm
+
+        return Vector(normalized_vec[0], normalized_vec[1], normalized_vec[2])
+    
+
+    def __mul__(self, scalar: Union[int, float]) -> 'Vector':
+        """
+        Performs scalar multiplication on the vector.
+
+        Args:
+            scalar (int or float): The scalar value to multiply the vector by.
+
+        Returns:
+            Vector: A new Vector instance representing the result of the scalar multiplication.
+        """
+
+        multiplied_vec = self.vec * scalar
+
+        return Vector(multiplied_vec[0], multiplied_vec[1], multiplied_vec[2])
+    
+
+    def __truediv__(self, scalar: Union[int, float]) -> 'Vector':
+        """
+        Performs scalar division on the vector.
+
+        Args:
+            scalar (int or float): The scalar value to divide the vector by.
+
+        Returns:
+            Vector: A new Vector instance representing the result of the scalar division.
+        """
+
+        divided_vec = self.vec / scalar
+
+        return Vector(divided_vec[0], divided_vec[1], divided_vec[2])
 
 
 

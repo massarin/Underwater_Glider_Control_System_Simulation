@@ -1,7 +1,8 @@
 
-from typing import Union
+import typing
 
 import SimMath
+from SimMath import Vector
 
 
 
@@ -22,7 +23,7 @@ class PIDController:
     Includes derivative kickback, integral windup, and output protections.
     """
     
-    def __init__(self, kp: float = 1.0, ki: float = 0.0, kd: float = 0.0, i_limit: float = 1_000.0, output_limit: float = 1_000.0) -> None:
+    def __init__(self, kp: float = 1, ki: float = 0, kd: float = 0, i_limit: float = 1_000, output_limit: float = 1_000) -> None:
         """
         Initialize the PID controller.
 
@@ -35,27 +36,27 @@ class PIDController:
         """
 
         # Tuning parameters
-        self.Kp = kp
-        self.Ki = ki
-        self.Kd = kd
+        self.Kp: float = kp
+        self.Ki: float = ki
+        self.Kd: float = kd
 
         # Integral windup limit
-        self.i_limit = i_limit
+        self.i_limit: float = i_limit
 
         # Output limit
-        self.output_limit = output_limit
+        self.output_limit: float = output_limit
 
         # Previous values
-        self.prev_error = 0
-        self.prev_input = 0
-        self.prev_time = 0
+        self.prev_error: float = 0
+        self.prev_input: float = 0
+        self.prev_time: float = 0
 
         # Integral term
-        self.integral = 0
+        self.integral: float = 0
 
 
 
-    def update(self, target, input, time):
+    def update(self, target: float, input: float, time: float) -> float:
         """
         Updates the control system based on the target, input, and current time.
 
@@ -71,6 +72,8 @@ class PIDController:
             ValueError: If the current time is not after the previous time.
         """
 
+        error = target - input
+
         # Don't return anything on first call
         if time == 0:
             self.prev_error = error
@@ -83,7 +86,6 @@ class PIDController:
         if time_delta <= 0:
             raise ValueError("time must be larger than prev time")
         
-        error = target - input
 
         # Integral windup prevention
         self.integral = SimMath.clamp_mag(self.integral + (error * time_delta), self.i_limit)
@@ -110,6 +112,7 @@ Typedef for the StateMachine class
 TODO: This may need to be a full class
 """
 State = int
+StateGraph = typing.Dict[State, typing.List[State]]
 diving = State(0)
 surfacing = State(1)
 
@@ -128,7 +131,7 @@ class StateMachine:
         state (State): The current state of the state machine.
     """
 
-    def __init__(self, state_graph: dict[State, list[State]], initial_state: State) -> None:
+    def __init__(self, state_graph: StateGraph, initial_state: State) -> None:
         """
         Initializes a new instance of the StateMachine class.
 
@@ -137,8 +140,8 @@ class StateMachine:
             initial_state (State): The initial state of the state machine.
         """
 
-        self.state = initial_state
-        self.state_graph = state_graph
+        self.state: State = initial_state
+        self.state_graph: StateGraph = state_graph
     
 
     def next(self) -> None:
@@ -147,3 +150,70 @@ class StateMachine:
         """
 
         self.state = self.state_graph[self.state][0]
+
+
+
+
+
+class ControlSystem:
+    """
+    This is all hardcoded for now
+    """
+
+    def __init__(self) -> None:
+
+        # Initialize state machine
+        state_graph: StateGraph = {
+            diving : [surfacing],
+            surfacing : [diving]
+        }
+
+        self.state_machine: StateMachine = StateMachine(state_graph, diving)
+
+
+
+        # Create cascading PID controllers
+
+        # Targets a depth
+        self.pid_depth: PIDController = PIDController(0.1, 0, 0, 10)
+
+        # Targets a vertical speed
+        self.pid_v_vel: PIDController = PIDController(0.1, 0, 0, 100)
+
+        # Targets a vertical acceleration
+        self.pid_v_acc: PIDController = PIDController(0.1, 0, 0, 10, 100)
+
+
+        # Glide path parameters
+
+        self.min_depth: float = -20
+        self.max_depth: float = -70
+        self.target_depth: float = self.min_depth
+
+
+    
+    def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, time: float) -> Vector:
+
+        # Swap states when needed
+        # TODO: There needs to be a better way to do this (the state machine should do it with a single method call)
+        if self.state_machine.state == diving:
+            if position.z() <= self.target_depth:
+                self.target_depth = self.min_depth
+                self.state_machine.next()
+        else:
+            if position.z() >= self.target_depth:
+                self.target_depth = self.max_depth
+                self.state_machine.next()
+
+            
+
+
+        # depth -> v_vel -> v_acc
+        pid_depth_output = self.pid_depth.update(self.target_depth, position.z(), time)
+        pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, velocity.z(), time)
+        pid_v_acc_output = self.pid_v_acc.update(pid_v_vel_output, acceleration.z(), time)
+
+
+
+        
+        return Vector(0.0, 0.0, pid_v_acc_output)
