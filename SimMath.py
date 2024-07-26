@@ -114,6 +114,18 @@ class Vector:
         divided_vec = self.vec / scalar
 
         return Vector(divided_vec[0], divided_vec[1], divided_vec[2])
+    
+    def __neg__(self) -> 'Vector':
+        """
+        Performs unary negation on the vector.
+
+        Returns:
+            Vector: A new Vector instance representing the negation of the vector.
+        """
+        
+        negated_vec = -self.vec
+
+        return Vector(negated_vec[0], negated_vec[1], negated_vec[2])
 
 
 
