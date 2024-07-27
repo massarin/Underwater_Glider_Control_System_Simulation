@@ -30,7 +30,7 @@ class GliderBody:
     
 
 
-    def compute_drag(self, velocity: Vector) -> Vector:
+    def compute_drag_force(self, velocity: Vector) -> Vector:
 
         # TODO: Compute projected area
         area = 0.1
@@ -42,7 +42,30 @@ class GliderBody:
 
 
 
-        
+
+class BuoyancyEngine:
+
+    def __init__(self, glider_hull_volume: float, tank_volume: float, pump_rate: float, proportion_full: float) -> None:
+
+        self.glider_hull_volume: float = glider_hull_volume
+        self.tank_volume: float = tank_volume
+        self.pump_rate: float = pump_rate
+        self.proportion_full: float = proportion_full
+
+
+    
+    def compute_buoyancy_force(self) -> Vector:
+
+        buoyancy_volume = self.glider_hull_volume + self.tank_volume * (1 - self.proportion_full)
+
+        return Inlet.gravity * (-1 * Inlet.density * buoyancy_volume)
+    
+
+
+    def compute_tank_change(self, time_step: float) -> None:
+
+        self.proportion_full = SimMath.clamp(self.proportion_full + (self.pump_rate * time_step), 0, 1)
+
 
 
 
@@ -73,7 +96,7 @@ class Glider:
 
         control_force = self.control_system.calc_acc(self.position, self.velocity, self.acceleration, time)
 
-        total_force = control_force + self.body.compute_drag(self.velocity)
+        total_force = control_force + self.body.compute_drag_force(self.velocity)
 
         self.acceleration = self.body.compute_acceleration(total_force)
         self.velocity += self.acceleration * time_delta
