@@ -19,5 +19,10 @@
         "kd": 0.8,
         "integral_limit": 100,
         "output_limit": 0.01
-    }
+    },
+    "high_depth": -20,
+    "low_depth": -70,
+    "control_system_frequency": 10,
+    "sim_timestep": 0.01,
+    "sim_end_time": 1000
 }

@@ -178,6 +178,18 @@ class Vector:
 
 
 def clamp(val: float, min: float, max: float) -> float:
+    """
+    Clamps a value between a minimum and maximum value.
+
+    Args:
+        val (float): The value to be clamped.
+        min (float): The minimum value.
+        max (float): The maximum value.
+
+    Returns:
+        float: The clamped value.
+
+    """
     
     if val > max:
         return max
