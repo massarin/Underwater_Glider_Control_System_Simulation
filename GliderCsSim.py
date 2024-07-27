@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+import sys
+
 import Glider
 import ControlSystem
 import SimMath
@@ -15,7 +17,23 @@ def do_sim() -> None:
 
     buoyancy_engine = Glider.BuoyancyEngine(tank_volume = 0.003, pump_rate = 0, proportion_full = 0)
 
-    control_system = ControlSystem.ControlSystem()
+
+    # Get the config path
+    config_path = None
+    for arg in sys.argv:
+        if arg.endswith(".json"):
+            config_path = arg
+
+    if config_path is None:
+        print(f"Usage: {"".join(sys.argv)} /path/to/config.json")
+
+        while config_path is None:
+            arg = input("Please enter config path: ")
+
+            if arg.endswith(".json"):
+                config_path = arg
+
+    control_system = ControlSystem.ControlSystem(config_path)
 
     glider = Glider.Glider(body = body, buoyancy_engine = buoyancy_engine, control_system = control_system,\
                 initial_position = Vector(), initial_velocity = Vector(), initial_acceleration = Vector())
@@ -26,6 +44,7 @@ def do_sim() -> None:
     time_step: float = 0.01
 
     max_time: float = 1000
+
 
 
     while time < max_time:

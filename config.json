@@ -1,0 +1,23 @@
+{
+    "pid_depth": {
+        "kp": 1,
+        "ki": 0,
+        "kd": 0,
+        "integral_limit": 100,
+        "output_limit": 100
+    },
+    "pid_v_vel": {
+        "kp": 1,
+        "ki": 0,
+        "kd": 0,
+        "integral_limit": 100,
+        "output_limit": 10
+    },
+    "pid_v_acc": {
+        "kp": 0.02,
+        "ki": 0.00033,
+        "kd": 0.8,
+        "integral_limit": 100,
+        "output_limit": 0.01
+    }
+}

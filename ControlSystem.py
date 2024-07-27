@@ -1,6 +1,8 @@
 
 import typing
 
+import json
+
 import numpy as np
 
 import SimMath
@@ -36,7 +38,7 @@ class PIDController:
     """
     
     def __init__(self, kp: float = 1, ki: float = 0, kd: float = 0,
-                 i_limit: float = 1_000, output_limit: float = 1_000) -> None:
+                 integral_limit: float = 1_000, output_limit: float = 1_000) -> None:
         """
         Initialize the PID controller.
 
@@ -54,7 +56,7 @@ class PIDController:
         self.kd: float = kd
 
         # Integral windup limit
-        self.i_limit: float = i_limit
+        self.integral_limit: float = integral_limit
 
         # Output limit
         self.output_limit: float = output_limit
@@ -101,7 +103,7 @@ class PIDController:
         
 
         # Integral windup prevention
-        self.integral = SimMath.clamp_mag(self.integral + (error * time_delta), self.i_limit)
+        self.integral = SimMath.clamp_mag(self.integral + (error * time_delta), self.integral_limit)
 
         # Derivative kickback prevention
         derivative = (error - self.prev_error) / time_delta
@@ -168,12 +170,25 @@ class StateMachine:
 
 
 
+
+    
+def load_config(file_path: str) -> dict:
+
+    with open(file_path, 'r') as file:
+        config = json.load(file)
+    
+    return config
+
+
+
+
+
 class ControlSystem:
     """
     This is all hardcoded for now
     """
 
-    def __init__(self) -> None:
+    def __init__(self, parameter_filepath: str) -> None:
 
         # Initialize state machine
         state_graph: StateGraph = {
@@ -197,14 +212,19 @@ class ControlSystem:
 
         # Create cascading PID controllers
 
-        # Targets a depth
-        self.pid_depth: PIDController = PIDController(1, 0, 0, 100, 100)
+        config = load_config(parameter_filepath)
 
-        # Targets a vertical speed
-        self.pid_v_vel: PIDController = PIDController(1, 0, 0, 100, 10)
+        pid_depth_params = config['pid_depth']
+        pid_v_vel_params = config['pid_v_vel']
+        pid_v_acc_params = config['pid_v_acc']
 
-        # Targets a vertical acceleration
-        self.pid_v_acc: PIDController = PIDController(0.02, 0.00033, 0.8, 100, 0.01)
+        self.pid_depth = PIDController(**pid_depth_params)
+        self.pid_v_vel = PIDController(**pid_v_vel_params)
+        self.pid_v_acc = PIDController(**pid_v_acc_params)
+
+        self.pid_depth = PIDController(**pid_depth_params)
+        self.pid_v_vel = PIDController(**pid_v_vel_params)
+        self.pid_v_acc = PIDController(**pid_v_acc_params)
 
 
         # Glide path parameters
