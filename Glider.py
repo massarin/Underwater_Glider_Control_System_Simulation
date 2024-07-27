@@ -73,10 +73,12 @@ class BuoyancyEngine:
 
 class Glider:
 
-    def __init__(self, body: GliderBody, control_system: ControlSystem, \
+    def __init__(self, body: GliderBody, buoyancy_engine: BuoyancyEngine, control_system: ControlSystem, \
                   initial_position: Vector, initial_velocity: Vector, initial_acceleration: Vector) -> None:
         
         self.body: GliderBody = body
+
+        self.buoyancy_engine: BuoyancyEngine = buoyancy_engine
 
         self.control_system :ControlSystem = control_system
 
@@ -90,17 +92,21 @@ class Glider:
     
     def sim_timestep(self, time: float) -> None:
 
-        time_delta = time - self.time
+        time_step = time - self.time
 
         self.time = time
 
-        control_force = self.control_system.calc_acc(self.position, self.velocity, self.acceleration, time)
+        command = self.control_system.calc_acc(self.position, self.velocity, self.acceleration, time)
 
-        total_force = control_force + self.body.compute_drag_force(self.velocity)
+        self.buoyancy_engine.pump_rate = command
+
+        self.buoyancy_engine.compute_tank_change(time_step)
+
+        total_force = self.buoyancy_engine.compute_buoyancy_force() + self.body.compute_drag_force(self.velocity)
 
         self.acceleration = self.body.compute_acceleration(total_force)
-        self.velocity += self.acceleration * time_delta
-        self.position += self.velocity * time_delta
+        self.velocity += self.acceleration * time_step
+        self.position += self.velocity * time_step
 
         # The Glider cannot leave the water
         if self.position.z() > 0:
