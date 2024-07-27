@@ -35,7 +35,8 @@ class PIDController:
     Includes derivative kickback, integral windup, and output protections.
     """
     
-    def __init__(self, kp: float = 1, ki: float = 0, kd: float = 0, i_limit: float = 1_000, output_limit: float = 1_000) -> None:
+    def __init__(self, kp: float = 1, ki: float = 0, kd: float = 0,
+                 i_limit: float = 1_000, output_limit: float = 1_000) -> None:
         """
         Initialize the PID controller.
 
@@ -48,9 +49,9 @@ class PIDController:
         """
 
         # Tuning parameters
-        self.Kp: float = kp
-        self.Ki: float = ki
-        self.Kd: float = kd
+        self.kp: float = kp
+        self.ki: float = ki
+        self.kd: float = kd
 
         # Integral windup limit
         self.i_limit: float = i_limit
@@ -61,7 +62,7 @@ class PIDController:
         # Previous values
         self.prev_error: float = 0
         self.prev_input: float = 0
-        self.prev_time: float = 0
+        self.prev_time: float | None = None
 
         # Integral term
         self.integral: float = 0
@@ -87,7 +88,7 @@ class PIDController:
         error = target - input
 
         # Don't return anything on first call
-        if time == 0:
+        if self.prev_time is None:
             self.prev_error = error
             self.prev_time = time
             self.prev_input = input
@@ -103,9 +104,9 @@ class PIDController:
         self.integral = SimMath.clamp_mag(self.integral + (error * time_delta), self.i_limit)
 
         # Derivative kickback prevention
-        derivative = (input - self.prev_input) / time_delta
+        derivative = (error - self.prev_error) / time_delta
 
-        output = (self.Kp * error) + (self.Ki * self.integral) + (self.Kd * derivative)
+        output = (self.kp * error) + (self.ki * self.integral) + (self.kd * derivative)
 
         # Store previous values
         self.prev_error = error
@@ -190,20 +191,20 @@ class ControlSystem:
 
         self.prev_update_time: float = self.time
 
-        self.prev_command: Vector = Vector()
+        self.prev_command: float = 0
 
 
 
         # Create cascading PID controllers
 
         # Targets a depth
-        self.pid_depth: PIDController = PIDController(0.1, 0, 0, 10)
+        self.pid_depth: PIDController = PIDController(1, 0, 0, 100, 100)
 
         # Targets a vertical speed
-        self.pid_v_vel: PIDController = PIDController(0.1, 0, 0, 100)
+        self.pid_v_vel: PIDController = PIDController(1, 0, 0, 100, 10)
 
         # Targets a vertical acceleration
-        self.pid_v_acc: PIDController = PIDController(0.1, 0, 0, 10, 100)
+        self.pid_v_acc: PIDController = PIDController(0.02, 0.00033, 0.8, 100, 0.01)
 
 
         # Glide path parameters
@@ -216,11 +217,11 @@ class ControlSystem:
 
 
     
-    def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, time: float) -> Vector:
+    def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, tank: float, time: float) -> float:
 
         self.time = time
 
-        self.logger.glider_log.append([time, position.z(), velocity.z(), acceleration.z()])
+        self.logger.glider_log.append([time, position.z(), velocity.z(), acceleration.z(), (tank - 1) * 10])
 
         if time < self.prev_update_time + self.period:
             return self.prev_command
@@ -249,7 +250,7 @@ class ControlSystem:
 
         self.logger.control_log.append([time, self.target_depth, pid_depth_output, pid_v_vel_output, pid_v_acc_output])
 
-        command = Vector(0.0, 0.0, pid_v_acc_output)
+        command = -pid_v_acc_output
 
         self.prev_command = command
 
