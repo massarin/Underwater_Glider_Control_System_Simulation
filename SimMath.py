@@ -177,6 +177,21 @@ class Vector:
 
 
 
+def clamp(val: float, min: float, max: float) -> float:
+    
+    if val > max:
+        return max
+
+    if val < min:
+        return min
+
+    return val
+
+
+
+
+
+
 def clamp_mag(val: float, max_mag: float) -> float:
     """
     Clamps the value `val` between -max_mag and max_mag.
