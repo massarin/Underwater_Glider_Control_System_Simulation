@@ -87,7 +87,7 @@ def do_sim() -> None:
                 initial_position = Vector(), initial_velocity = Vector(), initial_acceleration = Vector())
     
 
-    time: float = 0
+    time: float = 0.0
 
     time_step: float = config["sim_timestep"]
 

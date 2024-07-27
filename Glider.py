@@ -33,7 +33,7 @@ class GliderBody:
         self.mass: float = mass
         self.volume: float = volume
         self.drag_coefficient: float = drag_coefficient
-        self.max_force: float = 10
+        self.max_force: float = 10.0
 
 
 
@@ -217,7 +217,7 @@ class Glider:
         self.velocity: Vector = initial_velocity
         self.acceleration: Vector = initial_acceleration
 
-        self.time: float = 0
+        self.time: float = 0.0
 
 
 

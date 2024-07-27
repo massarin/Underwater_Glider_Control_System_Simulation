@@ -85,12 +85,12 @@ class PIDController:
         self.output_limit: float = output_limit
 
         # Previous values
-        self.prev_error: float = 0
-        self.prev_input: float = 0
+        self.prev_error: float = 0.0
+        self.prev_input: float = 0.0
         self.prev_time: float | None = None
 
         # Integral term
-        self.integral: float = 0
+        self.integral: float = 0.0
 
 
 
@@ -234,10 +234,10 @@ class ControlSystem:
         self.frequency: int = config["control_system_frequency"]
         self.period: float = 1.0 / self.frequency
 
-        self.time: float = 0
+        self.time: float = 0.0
         self.prev_update_time: float = self.time
-        
-        self.prev_command: float = 0
+
+        self.prev_command: float = 0.0
 
         # Create cascading PID controllers
         pid_depth_params = config['pid_depth']
