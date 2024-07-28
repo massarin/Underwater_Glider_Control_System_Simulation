@@ -2,6 +2,9 @@
 import numpy as np
 
 
+pi = np.pi
+
+
 
 class Vector:
     """
@@ -190,7 +193,7 @@ def clamp(val: float, min: float, max: float) -> float:
         float: The clamped value.
 
     """
-    
+
     if val > max:
         return max
 

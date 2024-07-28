@@ -56,11 +56,6 @@ def do_sim() -> None:
         None
     """
 
-    body = Glider.GliderBody(mass = 28.9, volume = 0.03, drag_coefficient = 0.50)
-
-    buoyancy_engine = Glider.BuoyancyEngine(tank_volume = 0.003, pump_rate = 0, proportion_full = 0)
-
-
     # Get the config path
     config_path = None
     for arg in sys.argv:
@@ -83,8 +78,16 @@ def do_sim() -> None:
     print("Setting Up")
     control_system = ControlSystem.ControlSystem(config)
 
-    glider = Glider.Glider(body = body, buoyancy_engine = buoyancy_engine, control_system = control_system,\
-                initial_position = Vector(), initial_velocity = Vector(), initial_acceleration = Vector())
+
+    body = Glider.GliderBody(mass = 28.9, length = 1.0, radius = 0.1, drag_coefficient = 0.50)
+
+
+    buoyancy_engine = Glider.BuoyancyEngine(tank_volume = 0.003, pump_rate = 0, proportion_full = 0)
+
+
+    glider = Glider.Glider(body = body, buoyancy_engine = buoyancy_engine, control_system = control_system,
+                initial_position = Vector(), initial_velocity = Vector(), initial_acceleration = Vector(),
+                initial_orientation = Vector(0, 1, 0))
     
 
     time: float = 0.0

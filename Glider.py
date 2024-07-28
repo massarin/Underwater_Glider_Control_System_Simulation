@@ -10,7 +10,7 @@ import Inlet
 
 class GliderBody:
     """
-    Represents the body of a glider.
+    Represents the body of a glider. It is a capsule.
 
     Attributes:
         mass (float): The mass of the glider body.
@@ -29,11 +29,23 @@ class GliderBody:
             Computes the gravity force acting on the glider body.
     """
 
-    def __init__(self, mass: float, volume: float, drag_coefficient: float) -> None:
+    def __init__(self, mass: float, length: float, radius: float, drag_coefficient: float) -> None:
         self.mass: float = mass
-        self.volume: float = volume
+
+        self.length: float = length
+        self.radius: float = radius
+
+        # Volume of the cylinder + volume of the two hemispheres
+        self.volume: float = (2.0 * SimMath.pi * radius * length) +\
+            ((4.0 / 3.0) * SimMath.pi * radius * radius * radius)
+
         self.drag_coefficient: float = drag_coefficient
         self.max_force: float = 10.0
+
+
+        # These are constants that speed up drag calculations
+        self.__end_cap_proj_area: float = SimMath.pi * self.radius * self.radius
+        self.__perp_cylinder_proj_area: float = 2.0 * self.radius * self.length
 
 
 
@@ -57,7 +69,7 @@ class GliderBody:
 
 
 
-    def compute_drag_force(self, velocity: Vector) -> Vector:
+    def compute_drag_force(self, velocity: Vector, orientation: Vector) -> Vector:
         """
         Computes the drag force acting on the glider body based on its velocity.
 
@@ -68,8 +80,8 @@ class GliderBody:
             Vector: The drag force acting on the glider body.
         """
 
-        # TODO: Compute projected area
-        area = 0.1
+        # Area of the shadow of a capsule
+        area = self.__end_cap_proj_area + self.__perp_cylinder_proj_area * velocity.normalized().dot(orientation)
 
         # Drag equation
         return -velocity.normalized() * (0.5 * Inlet.density * self.drag_coefficient * area * velocity.dot(velocity))
@@ -182,6 +194,7 @@ class Glider:
         position (Vector): The position of the glider.
         velocity (Vector): The velocity of the glider.
         acceleration (Vector): The acceleration of the glider.
+        orientation (Vector): The direction the glider is pointing.
         time (float): The current time of the glider simulation.
 
     Methods:
@@ -194,7 +207,8 @@ class Glider:
     """
 
     def __init__(self, body: GliderBody, buoyancy_engine: BuoyancyEngine, control_system: ControlSystem,
-                  initial_position: Vector, initial_velocity: Vector, initial_acceleration: Vector) -> None:
+                  initial_position: Vector, initial_velocity: Vector, initial_acceleration: Vector,
+                  initial_orientation: Vector) -> None:
         """
         Initializes a glider object.
 
@@ -216,6 +230,8 @@ class Glider:
         self.position: Vector = initial_position
         self.velocity: Vector = initial_velocity
         self.acceleration: Vector = initial_acceleration
+        
+        self.orientation: Vector = initial_orientation
 
         self.time: float = 0.0
 
@@ -231,7 +247,7 @@ class Glider:
 
         total_buoyancy = self.body.compute_buoyancy_force() + self.buoyancy_engine.compute_buoyancy_force()
 
-        total_drag = self.body.compute_drag_force(self.velocity)
+        total_drag = self.body.compute_drag_force(self.velocity, self.orientation)
 
         total_gravity = self.body.compute_gravity_force() + self.buoyancy_engine.compute_gravity_force()
 
