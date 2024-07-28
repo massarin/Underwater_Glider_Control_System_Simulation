@@ -80,6 +80,39 @@ class Vector:
         return self.vec[2]
     
 
+
+    def rotate(self, angle: float, axis: 'Vector') -> 'Vector':
+        """
+        Rotates the vector by the given angle around the specified axis.
+
+        Args:
+            angle (float): The angle in radians.
+            axis (Vector): The axis of rotation.
+
+        Returns:
+            Vector: A new Vector instance representing the rotated vector.
+        """
+
+        # Normalize the axis vector
+        normalized_axis = axis.normalized()
+
+        # Compute the sine and cosine of the angle
+        cos_angle = np.cos(angle)
+        sin_angle = np.sin(angle)
+
+        # Compute the cross product between the axis and the vector
+        cross_product = normalized_axis.cross(self)
+
+        # Compute the dot product between the axis and the vector
+        dot_product = normalized_axis.dot(self)
+
+        # Compute the rotated vector
+        rotated_vec = self * cos_angle + cross_product * sin_angle + normalized_axis * dot_product * (1 - cos_angle)
+
+        return rotated_vec
+    
+
+
     def magnitude(self) -> float:
         return float(np.linalg.norm(self.vec))
 
@@ -106,6 +139,23 @@ class Vector:
 
     def dot(self, other: 'Vector') -> float:
         return np.dot(self.vec, other.vec)
+    
+
+
+    def cross(self, other: 'Vector') -> 'Vector':
+        """
+        Computes the cross product of two vectors.
+
+        Args:
+            other (Vector): Another vector to compute the cross product with.
+
+        Returns:
+            Vector: A new Vector instance representing the cross product of the two vectors.
+        """
+
+        
+        cross_product = np.cross(self.vec, other.vec)
+        return Vector(cross_product[0], cross_product[1], cross_product[2])
     
 
 
@@ -175,6 +225,25 @@ class Vector:
 
         return Vector(negated_vec[0], negated_vec[1], negated_vec[2])
 
+
+
+
+
+def lerp(start: float, end: float, t: float) -> float:
+    """
+    Linearly interpolates between two values.
+
+    Args:
+        start (float): The starting value.
+        end (float): The ending value.
+        t (float): The interpolation parameter. Should be between 0 and 1.
+
+    Returns:
+        float: The interpolated value.
+
+    """
+
+    return start + ((end - start) * t)
 
 
 

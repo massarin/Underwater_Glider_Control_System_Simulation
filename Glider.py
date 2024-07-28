@@ -15,7 +15,7 @@ class GliderBody:
     Attributes:
         mass (float): The mass of the glider body.
         volume (float): The volume of the glider body.
-        drag_coefficient (float): The drag coefficient of the glider body.
+        drag_multiplier (float): The drag coefficient of the glider body.
         max_force (float): The maximum force that can be applied to the glider body.
 
     Methods:
@@ -40,13 +40,17 @@ class GliderBody:
             ((4.0 / 3.0) * SimMath.pi * radius * radius * radius)
         
 
-        self.drag_coefficient: float = drag_multiplier
+        self.drag_multiplier: float = drag_multiplier
         self.max_force: float = 10.0
 
 
         # These are constants that speed up drag calculations
         self.__end_cap_proj_area: float = SimMath.pi * self.radius * self.radius
         self.__perp_cylinder_proj_area: float = 2.0 * self.radius * self.length
+
+
+        self.front_drag_coefficient = 0.4
+        self.side_drag_coefficient = 1.2
 
 
 
@@ -82,11 +86,17 @@ class GliderBody:
         """
 
         # Area of the shadow of a capsule
-        area = self.__end_cap_proj_area + self.__perp_cylinder_proj_area * abs(velocity.normalized().dot(orientation))
+        cosine_angle = abs(velocity.normalized().dot(orientation))
+
+        area = self.__end_cap_proj_area + self.__perp_cylinder_proj_area * cosine_angle
+
+
+        drag_coef = self.drag_multiplier *\
+                SimMath.lerp(self.front_drag_coefficient, self.side_drag_coefficient, cosine_angle)
 
 
         # Drag equation
-        return -velocity.normalized() * (0.5 * Inlet.density * self.drag_coefficient * area * velocity.dot(velocity))
+        return -velocity.normalized() * (0.5 * Inlet.density * area * drag_coef * velocity.dot(velocity))
 
 
 
@@ -239,7 +249,7 @@ class Glider:
         self.velocity: Vector = initial_velocity
         self.acceleration: Vector = initial_acceleration
         
-        self.orientation: Vector = initial_orientation
+        self.orientation: Vector = initial_orientation.normalized()
 
         self.time: float = 0.0
 
