@@ -75,26 +75,35 @@ def do_sim() -> None:
     config = load_config(config_path)
 
 
+    glider_config = config["glider"]
+
+
     print("Setting Up")
-    control_system = ControlSystem.ControlSystem(config)
+    control_system = ControlSystem.ControlSystem(glider_config["control_system"])
 
 
-    body = Glider.GliderBody(mass = 28.9, length = 1.0, radius = 0.1, drag_coefficient = 0.50)
+    body = Glider.GliderBody(**glider_config["hull"])
 
 
-    buoyancy_engine = Glider.BuoyancyEngine(tank_volume = 0.003, pump_rate = 0, proportion_full = 0)
+    buoyancy_engine = Glider.BuoyancyEngine(**glider_config["buoyancy_engine"])
 
 
-    glider = Glider.Glider(body = body, buoyancy_engine = buoyancy_engine, control_system = control_system,
-                initial_position = Vector(), initial_velocity = Vector(), initial_acceleration = Vector(),
-                initial_orientation = Vector(0, 1, 0))
+    glider = Glider.Glider(body = body,
+                           buoyancy_engine = buoyancy_engine,
+                           control_system = control_system,
+                           initial_position = Vector(**glider_config["initial_position"]),
+                           initial_velocity = Vector(**glider_config["initial_velocity"]),
+                           initial_acceleration = Vector(**glider_config["initial_acceleration"]),
+                           initial_orientation = Vector(**glider_config["initial_orientation"]))
     
+
+    sim_config = config["sim"]
 
     time: float = 0.0
 
-    time_step: float = config["sim_timestep"]
+    time_step: float = sim_config["timestep"]
 
-    max_time: float = config["sim_end_time"]
+    max_time: float = sim_config["end_time"]
 
 
     print("Setup Done")

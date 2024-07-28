@@ -29,17 +29,18 @@ class GliderBody:
             Computes the gravity force acting on the glider body.
     """
 
-    def __init__(self, mass: float, length: float, radius: float, drag_coefficient: float) -> None:
+    def __init__(self, mass: float, length: float, radius: float, drag_multiplier: float) -> None:
         self.mass: float = mass
 
         self.length: float = length
         self.radius: float = radius
 
         # Volume of the cylinder + volume of the two hemispheres
-        self.volume: float = (2.0 * SimMath.pi * radius * length) +\
+        self.volume: float = (SimMath.pi * length * radius * radius) +\
             ((4.0 / 3.0) * SimMath.pi * radius * radius * radius)
+        
 
-        self.drag_coefficient: float = drag_coefficient
+        self.drag_coefficient: float = drag_multiplier
         self.max_force: float = 10.0
 
 
@@ -81,7 +82,8 @@ class GliderBody:
         """
 
         # Area of the shadow of a capsule
-        area = self.__end_cap_proj_area + self.__perp_cylinder_proj_area * velocity.normalized().dot(orientation)
+        area = self.__end_cap_proj_area + self.__perp_cylinder_proj_area * abs(velocity.normalized().dot(orientation))
+
 
         # Drag equation
         return -velocity.normalized() * (0.5 * Inlet.density * self.drag_coefficient * area * velocity.dot(velocity))
@@ -134,10 +136,14 @@ class BuoyancyEngine:
             Computes the gravity force based on the tank volume and proportion full.
     """
 
-    def __init__(self, tank_volume: float, pump_rate: float, proportion_full: float) -> None:
+    def __init__(self, tank_volume: float, initial_proportion_full: float,
+                  initial_pump_rate: float, max_pump_rate: float) -> None:
+    
         self.tank_volume: float = tank_volume
-        self.pump_rate: float = pump_rate
-        self.proportion_full: float = proportion_full
+        self.proportion_full: float = initial_proportion_full
+
+        self.pump_rate: float = initial_pump_rate
+        self.max_pump_rate: float = max_pump_rate
 
 
 
@@ -148,6 +154,8 @@ class BuoyancyEngine:
         Args:
             time_step (float): The time step for the computation.
         """
+
+        self.pump_rate = SimMath.clamp_mag(self.pump_rate, self.max_pump_rate)
         
         self.proportion_full = SimMath.clamp(self.proportion_full + (self.pump_rate * time_step), 0, 1)
 
@@ -289,4 +297,14 @@ class Glider:
                 self.velocity.z(0)
             
             if self.acceleration.z() > 0:
+                self.acceleration.z(0)
+
+        # It cannot go too deep either
+        if self.position.z() < -200:
+            self.position.z(-199.9)
+
+            if self.velocity.z() < 0:
+                self.velocity.z(0)
+            
+            if self.acceleration.z() < 0:
                 self.acceleration.z(0)

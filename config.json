@@ -1,28 +1,106 @@
+
 {
-    "pid_depth": {
-        "kp": 1,
-        "ki": 0,
-        "kd": 0,
-        "integral_limit": 100,
-        "output_limit": 100
+    "comments": {
+        "Use this link to choose values": "https://www.desmos.com/calculator/ozc7lfymdm"
     },
-    "pid_v_vel": {
-        "kp": 1,
-        "ki": 0,
-        "kd": 0,
-        "integral_limit": 100,
-        "output_limit": 10
+
+
+
+
+    "glider": {
+
+        "control_system": {
+
+            "pid_depth": {
+
+                "kp": 1.0,
+                "ki": 0.0,
+                "kd": 0.0,
+                "integral_limit": 100.0,
+                "output_limit": 100.0
+            },
+
+
+            "pid_v_vel": {
+
+                "kp": 1.0,
+                "ki": 0.0,
+                "kd": 0.0,
+                "integral_limit": 100.0,
+                "output_limit": 10.0
+            },
+
+
+            "pid_v_acc": {
+
+                "kp": 0.02,
+                "ki": 0.00033,
+                "kd": 0.8,
+                "integral_limit": 100.0,
+                "output_limit": 0.01
+            },
+    
+
+            "high_depth": -20.0,
+            "low_depth": -70.0,
+            "frequency": 10
+        },
+
+
+
+        "hull": {
+            "mass": 34.7,
+            "length": 1.0,
+            "radius": 0.1,
+            "drag_multiplier": 1.0
+        },
+
+
+
+        "buoyancy_engine": {
+
+            "tank_volume": 0.003,
+            "initial_proportion_full": 0.0,
+            "initial_pump_rate": 0.0,
+            "max_pump_rate": 0.1
+
+        },
+
+
+        "initial_position": {
+
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+
+        "initial_velocity": {
+
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+
+        "initial_acceleration": {
+
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+
+        "initial_orientation": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        }
     },
-    "pid_v_acc": {
-        "kp": 0.02,
-        "ki": 0.00033,
-        "kd": 0.8,
-        "integral_limit": 100,
-        "output_limit": 0.01
-    },
-    "high_depth": -20,
-    "low_depth": -70,
-    "control_system_frequency": 10,
-    "sim_timestep": 0.01,
-    "sim_end_time": 1000
+
+
+
+
+    "sim": {
+
+        "timestep": 0.01,
+        "end_time": 1000.0
+    }
 }

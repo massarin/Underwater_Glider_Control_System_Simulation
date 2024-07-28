@@ -231,7 +231,7 @@ class ControlSystem:
         }
         self.state_machine: StateMachine = StateMachine(state_graph, diving)
 
-        self.frequency: int = config["control_system_frequency"]
+        self.frequency: int = config["frequency"]
         self.period: float = 1.0 / self.frequency
 
         self.time: float = 0.0
@@ -240,13 +240,9 @@ class ControlSystem:
         self.prev_command: float = 0.0
 
         # Create cascading PID controllers
-        pid_depth_params = config['pid_depth']
-        pid_v_vel_params = config['pid_v_vel']
-        pid_v_acc_params = config['pid_v_acc']
-
-        self.pid_depth = PIDController(**pid_depth_params)
-        self.pid_v_vel = PIDController(**pid_v_vel_params)
-        self.pid_v_acc = PIDController(**pid_v_acc_params)
+        self.pid_depth = PIDController(**config['pid_depth'])
+        self.pid_v_vel = PIDController(**config['pid_v_vel'])
+        self.pid_v_acc = PIDController(**config['pid_v_acc'])
 
         # Glide path parameters
         self.min_depth: float = config["high_depth"]
