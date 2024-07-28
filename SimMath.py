@@ -153,7 +153,7 @@ class Vector:
             Vector: A new Vector instance representing the cross product of the two vectors.
         """
 
-        
+
         cross_product = np.cross(self.vec, other.vec)
         return Vector(cross_product[0], cross_product[1], cross_product[2])
     
@@ -224,6 +224,18 @@ class Vector:
         negated_vec = -self.vec
 
         return Vector(negated_vec[0], negated_vec[1], negated_vec[2])
+    
+
+
+    def __str__(self) -> str:
+        """
+        Returns a string representation of the Vector object.
+
+        Returns:
+            str: A string representation of the Vector object.
+        """
+        
+        return f"Vector({self.vec[0]}, {self.vec[1]}, {self.vec[2]})"
 
 
 
@@ -319,3 +331,9 @@ def sign(val: int | float) -> int:
     
     return -1
 
+
+
+
+def arccos(theta: float) -> float:
+
+    return np.arccos(theta)

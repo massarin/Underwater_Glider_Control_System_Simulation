@@ -200,6 +200,55 @@ class BuoyancyEngine:
 
 
 
+class Hydrofoil:
+
+    def __init__(self, reference_area: float, lift_multiplier: float,
+                 lift_curve_slope: float, stall_angle: float) -> None:
+        
+        self.reference_area: float = reference_area
+
+        self.lift_multiplier: float = lift_multiplier
+
+        self.lift_curve_slope: float = lift_curve_slope
+
+        self.stall_angle: float = stall_angle
+
+    
+
+    def compute_lift_coefficient(self, angle_of_attack: float) -> float:
+
+        lift_coefficient = 0.0
+
+        angle = abs(angle_of_attack)
+
+        if angle < self.stall_angle:
+            lift_coefficient = self.lift_curve_slope * angle
+        
+        elif angle < 0.7854: # pi / 4
+            lift_coefficient = SimMath.lerp(self.lift_curve_slope * self.stall_angle, 0.0, angle - self.stall_angle)
+        
+        return SimMath.sign(angle_of_attack) * lift_coefficient * self.lift_multiplier
+    
+
+
+    def compute_lift_force(self, velocity: Vector, orientation: Vector) -> Vector:
+
+        angle_of_attack = SimMath.arccos(velocity.normalized().dot(orientation))
+
+        lift_coefficient = self.compute_lift_coefficient(angle_of_attack)
+
+        lift_vector = orientation.cross(velocity).normalized()
+
+
+        lift = lift_vector * (0.5 * Inlet.density * self.reference_area * lift_coefficient * velocity.dot(velocity))
+
+
+        return lift
+
+
+
+
+
 
 class Glider:
     """
@@ -224,9 +273,10 @@ class Glider:
 
     """
 
-    def __init__(self, body: GliderBody, buoyancy_engine: BuoyancyEngine, control_system: ControlSystem,
-                  initial_position: Vector, initial_velocity: Vector, initial_acceleration: Vector,
-                  initial_orientation: Vector) -> None:
+    def __init__(self, body: GliderBody, buoyancy_engine: BuoyancyEngine, hydrofoil: Hydrofoil,
+                 control_system: ControlSystem,
+                 initial_position: Vector, initial_velocity: Vector, initial_acceleration: Vector,
+                 initial_orientation: Vector) -> None:
         """
         Initializes a glider object.
 
@@ -242,6 +292,8 @@ class Glider:
         self.body: GliderBody = body
 
         self.buoyancy_engine: BuoyancyEngine = buoyancy_engine
+
+        self.hydrofoil: Hydrofoil = hydrofoil
 
         self.control_system: ControlSystem = control_system
 
@@ -269,12 +321,19 @@ class Glider:
 
         total_gravity = self.body.compute_gravity_force() + self.buoyancy_engine.compute_gravity_force()
 
-        total_force = total_buoyancy + total_drag + total_gravity
+        total_lift = self.hydrofoil.compute_lift_force(self.velocity, self.orientation)
+
+        # print(total_lift)
+
+        total_force = total_buoyancy + total_drag + total_gravity + total_lift
 
 
         self.acceleration = self.body.compute_acceleration(total_force)
         self.velocity += self.acceleration * time_step
         self.position += self.velocity * time_step
+
+
+        self.orientation = self.orientation.rotate(0.1 * time_step, Vector(0, 1, 0))
 
     
     
