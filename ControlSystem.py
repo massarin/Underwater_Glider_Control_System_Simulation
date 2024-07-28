@@ -1,10 +1,6 @@
 
 import typing
 
-import json
-
-import numpy as np
-
 import SimMath
 from SimMath import Vector
 
@@ -270,7 +266,7 @@ class ControlSystem:
         """
 
         self.time = time
-        self.logger.glider_log.append([time, position.z(), velocity.z(), acceleration.z(), (tank - 1) * 10])
+        self.logger.glider_log.append([time, position, velocity, acceleration, (tank - 1) * 10])
 
         if time < self.prev_update_time + self.period:
             return self.prev_command

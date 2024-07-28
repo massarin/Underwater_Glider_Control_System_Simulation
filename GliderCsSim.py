@@ -126,30 +126,42 @@ def do_sim() -> None:
     control_log = np.array(glider.control_system.logger.control_log)
 
     glider_time = [row[0] for row in glider_log]
-    glider_vars = list(zip(*(glider_log)))[1:]
-    glider_labels = ["position", "velocity", "acceleration", "tank"]
+    glider_x_components = [row[1].x() for row in glider_log]  # Extracting x components
+    glider_y_components = [row[1].y() for row in glider_log]  # Extracting y components
+    glider_z_components = [row[1].z() for row in glider_log]  # Extracting z components
 
     control_time = [row[0] for row in control_log]
     control_vars = list(zip(*control_log))[1:]
     control_labels = ["target depth", "depth pid", "vel pid", "acc pid"]
 
+    # Create a new figure for the x-y plot
+    plt.figure()
+    plt.plot(glider_x_components, glider_y_components, label="x vs y")
+    plt.xlabel("X Component")
+    plt.ylabel("Y Component")
+    plt.legend(loc="lower left")
+    plt.axis('equal')  # Automatic scaling
+    plt.title("X vs Y Components")
+    plt.grid(True)
+    plt.show()
 
+    # Create subplots for the remaining plots
     fig, axs = plt.subplots(2, 1, sharex=True)
 
-    for i, var in enumerate(glider_vars):
-        axs[0].plot(glider_time, var, label=glider_labels[i])
+    # Plotting z components against time
+    axs[0].plot(glider_time, glider_z_components, label="z component")
+    axs[0].set_ylabel("Z Component")
+    axs[0].legend(loc="lower left")
 
+    # Plotting control variables
     for i, var in enumerate(control_vars):
         axs[1].plot(control_time, var, label=control_labels[i])
 
-    axs[0].set_ylabel("Glider")
-    axs[0].legend(loc="lower left")
-    
     axs[1].set_ylabel("Control")
     axs[1].legend(loc="lower left")
 
     fig.supxlabel("Time")
-    plt.title(f"acc kp: {glider.control_system.pid_v_acc.kp},  ki: {glider.control_system.pid_v_acc.ki},  kd: {glider.control_system.pid_v_acc.kd}")
+    plt.title(f"Glider Dynamics")
     plt.grid(True)
 
     print("Plot Created")
