@@ -98,7 +98,9 @@ def do_sim() -> None:
                            initial_position = Vector(**glider_config["initial_position"]),
                            initial_velocity = Vector(**glider_config["initial_velocity"]),
                            initial_acceleration = Vector(**glider_config["initial_acceleration"]),
-                           initial_orientation = Vector(**glider_config["initial_orientation"]))
+                           initial_roll = glider_config["initial_roll"],
+                           initial_pitch = glider_config["initial_pitch"],
+                           initial_yaw = glider_config["initial_yaw"])
     
 
     sim_config = config["sim"]

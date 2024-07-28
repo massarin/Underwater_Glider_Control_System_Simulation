@@ -6,6 +6,8 @@ from SimMath import Vector
 
 import Inlet
 
+import numpy as np
+
 
 
 class GliderBody:
@@ -74,7 +76,7 @@ class GliderBody:
 
 
 
-    def compute_drag_force(self, velocity: Vector, orientation: Vector) -> Vector:
+    def compute_drag_force(self, velocity: Vector, roll: float, pitch: float, yaw: float) -> Vector:
         """
         Computes the drag force acting on the glider body based on its velocity.
 
@@ -85,8 +87,10 @@ class GliderBody:
             Vector: The drag force acting on the glider body.
         """
 
+        direction = SimMath.euler_to_direction(roll, pitch, yaw)
+
         # Area of the shadow of a capsule
-        cosine_angle = abs(velocity.normalized().dot(orientation))
+        cosine_angle = abs(velocity.normalized().dot(direction))
 
         area = self.__end_cap_proj_area + self.__perp_cylinder_proj_area * cosine_angle
 
@@ -231,17 +235,23 @@ class Hydrofoil:
     
 
 
-    def compute_lift_force(self, velocity: Vector, orientation: Vector) -> Vector:
+    def compute_lift_force(self, velocity: Vector, roll: float, pitch: float, yaw: float) -> Vector:
 
-        angle_of_attack = SimMath.arccos(velocity.normalized().dot(orientation))
+        rotation_matrix = SimMath.euler_to_rotation_matrix(roll, pitch, yaw)
+
+        velocity_body = np.dot(rotation_matrix.T, velocity.vec)
+
+        dynamic_pressure = 0.5 * Inlet.density * np.dot(velocity_body, velocity_body)
+
+        angle_of_attack = np.arctan2(velocity_body[2], velocity_body[0])
 
         lift_coefficient = self.compute_lift_coefficient(angle_of_attack)
 
-        lift_vector = orientation.cross(velocity).normalized()
+        lift_force_body = np.array([0, lift_coefficient * dynamic_pressure * self.reference_area, 0])
 
+        lift_force_world = np.dot(rotation_matrix, lift_force_body)
 
-        lift = lift_vector * (0.5 * Inlet.density * self.reference_area * lift_coefficient * velocity.dot(velocity))
-
+        lift = Vector(lift_force_world[0], lift_force_world[1], lift_force_world[2])
 
         return lift
 
@@ -276,7 +286,7 @@ class Glider:
     def __init__(self, body: GliderBody, buoyancy_engine: BuoyancyEngine, hydrofoil: Hydrofoil,
                  control_system: ControlSystem,
                  initial_position: Vector, initial_velocity: Vector, initial_acceleration: Vector,
-                 initial_orientation: Vector) -> None:
+                 initial_roll: float, initial_pitch: float, initial_yaw: float) -> None:
         """
         Initializes a glider object.
 
@@ -301,7 +311,9 @@ class Glider:
         self.velocity: Vector = initial_velocity
         self.acceleration: Vector = initial_acceleration
         
-        self.orientation: Vector = initial_orientation.normalized()
+        self.roll: float = initial_roll
+        self.pitch: float = initial_pitch
+        self.yaw: float = initial_yaw
 
         self.time: float = 0.0
 
@@ -317,13 +329,11 @@ class Glider:
 
         total_buoyancy = self.body.compute_buoyancy_force() + self.buoyancy_engine.compute_buoyancy_force()
 
-        total_drag = self.body.compute_drag_force(self.velocity, self.orientation)
+        total_drag = self.body.compute_drag_force(self.velocity, self.roll, self.pitch, self.yaw)
 
         total_gravity = self.body.compute_gravity_force() + self.buoyancy_engine.compute_gravity_force()
 
-        total_lift = self.hydrofoil.compute_lift_force(self.velocity, self.orientation)
-
-        # print(total_lift)
+        total_lift = self.hydrofoil.compute_lift_force(self.velocity, self.roll, self.pitch, self.yaw)
 
         total_force = total_buoyancy + total_drag + total_gravity + total_lift
 
@@ -331,9 +341,6 @@ class Glider:
         self.acceleration = self.body.compute_acceleration(total_force)
         self.velocity += self.acceleration * time_step
         self.position += self.velocity * time_step
-
-
-        self.orientation = self.orientation.rotate(0.1 * time_step, Vector(0, 1, 0))
 
     
     

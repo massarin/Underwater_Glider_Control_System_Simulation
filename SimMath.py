@@ -234,9 +234,70 @@ class Vector:
         Returns:
             str: A string representation of the Vector object.
         """
-        
+
         return f"Vector({self.vec[0]}, {self.vec[1]}, {self.vec[2]})"
 
+    
+
+
+
+def euler_to_direction(roll: float, pitch: float, yaw: float) -> 'Vector':
+    """
+    Converts Euler angles to a direction vector.
+
+    Args:
+        roll (float): The roll angle in radians.
+        pitch (float): The pitch angle in radians.
+        yaw (float): The yaw angle in radians.
+
+    Returns:
+        Vector: The direction vector.
+    """
+
+    x = np.cos(pitch) * np.cos(yaw)
+    y = np.cos(pitch) * np.sin(yaw)
+    z = np.sin(pitch)
+    return Vector(x, y, z)
+
+
+
+def euler_to_rotation_matrix(roll: float, pitch: float, yaw: float) -> np.ndarray:
+    """
+    Converts Euler angles to a rotation matrix.
+
+    Args:
+        roll (float): The roll angle in radians.
+        pitch (float): The pitch angle in radians.
+        yaw (float): The yaw angle in radians.
+
+    Returns:
+        np.ndarray: The rotation matrix.
+    """
+    # Rotation matrix for roll
+    R_x = np.array([
+        [1,             0,             0],
+        [0,  np.cos(roll), -np.sin(roll)],
+        [0,  np.sin(roll),  np.cos(roll)]
+    ])
+
+    # Rotation matrix for pitch
+    R_y = np.array([
+        [ np.cos(pitch),   0,  np.sin(pitch)],
+        [             0,   1,              0],
+        [-np.sin(pitch),   0,  np.cos(pitch)]
+    ])
+
+    # Rotation matrix for yaw
+    R_z = np.array([
+        [ np.cos(yaw), -np.sin(yaw),    0],
+        [ np.sin(yaw),  np.cos(yaw),    0],
+        [           0,            0,    1]
+    ])
+
+    # Combined rotation matrix
+    R = np.dot(R_z, np.dot(R_y, R_x))
+
+    return R
 
 
 

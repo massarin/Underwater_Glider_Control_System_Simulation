@@ -70,7 +70,7 @@
         "hydrofoil": {
 
             "reference_area": 0.003,
-            "lift_multiplier": 10.0,
+            "lift_multiplier": 1.0,
             "lift_curve_slope": 10.0,
             "stall_angle": 0.17
         },
@@ -97,11 +97,9 @@
             "z": 0.0
         },
 
-        "initial_orientation": {
-            "x": 0.0,
-            "y": 0.0,
-            "z": 1.0
-        }
+        "initial_roll": 0.0,
+        "initial_pitch": 0.0,
+        "initial_yaw": 0.0
     },
 
 
