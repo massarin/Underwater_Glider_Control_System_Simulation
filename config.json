@@ -37,7 +37,7 @@
                 "ki": 0.00033,
                 "kd": 0.8,
                 "integral_limit": 100.0,
-                "output_limit": 0.01
+                "output_limit": 0.1
             },
     
 
@@ -49,6 +49,7 @@
 
 
         "hull": {
+
             "mass": 34.7,
             "length": 1.0,
             "radius": 0.1,
@@ -60,19 +61,30 @@
         "buoyancy_engine": {
 
             "tank_volume": 0.003,
-            "initial_proportion_full": 0.0,
+            "initial_proportion_full": 1.0,
             "initial_pump_rate": 0.0,
-            "max_pump_rate": 0.1
+            "max_pump_rate": 0.1,
+            "position": {
+                "x": 0.5,
+                "y": 0.0,
+                "z": 0.05
+            }
         },
 
 
 
         "hydrofoil": {
 
-            "reference_area": 0.003,
+            "reference_area": 0.025,
             "lift_multiplier": 1.0,
             "lift_curve_slope": 10.0,
-            "stall_angle": 0.17
+            "stall_angle": 0.17,
+            "position": {
+                "x": -0.5,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "mass": 0.0
         },
 
 
@@ -97,9 +109,27 @@
             "z": 0.0
         },
 
-        "initial_roll": 0.0,
-        "initial_pitch": 0.0,
-        "initial_yaw": 0.0
+
+        "initial_orientation": {
+
+            "x": 0.5,
+            "y": -0.5,
+            "z": 0.0
+        },
+
+        "initial_angular_velocity": {
+
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+
+        "initial_angular_acceleration": {
+
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        }
     },
 
 

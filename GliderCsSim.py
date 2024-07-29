@@ -74,33 +74,21 @@ def do_sim() -> None:
     
     config = load_config(config_path)
 
-
     glider_config = config["glider"]
 
 
     print("Setting Up")
-    control_system = ControlSystem.ControlSystem(glider_config["control_system"])
 
-
-    body = Glider.GliderBody(**glider_config["hull"])
-
-
-    buoyancy_engine = Glider.BuoyancyEngine(**glider_config["buoyancy_engine"])
-
-
-    hydrofoil = Glider.Hydrofoil(**glider_config["hydrofoil"])
-
-
-    glider = Glider.Glider(body = body,
-                           buoyancy_engine = buoyancy_engine,
-                           hydrofoil = hydrofoil,
-                           control_system = control_system,
+    glider = Glider.Glider(body = Glider.GliderBody(**glider_config["hull"]),
+                           buoyancy_engine = Glider.BuoyancyEngine(**glider_config["buoyancy_engine"]),
+                           hydrofoil = Glider.Hydrofoil(**glider_config["hydrofoil"]),
+                           control_system = ControlSystem.ControlSystem(glider_config["control_system"]),
                            initial_position = Vector(**glider_config["initial_position"]),
                            initial_velocity = Vector(**glider_config["initial_velocity"]),
                            initial_acceleration = Vector(**glider_config["initial_acceleration"]),
-                           initial_roll = glider_config["initial_roll"],
-                           initial_pitch = glider_config["initial_pitch"],
-                           initial_yaw = glider_config["initial_yaw"])
+                           initial_orientation = Vector(**glider_config["initial_orientation"]),
+                           initial_angular_velocity = Vector(**glider_config["initial_angular_velocity"]),
+                           initial_angular_acceleration = Vector(**glider_config["initial_angular_acceleration"]))
     
 
     sim_config = config["sim"]
@@ -128,9 +116,19 @@ def do_sim() -> None:
     control_log = np.array(glider.control_system.logger.control_log)
 
     glider_time = [row[0] for row in glider_log]
-    glider_x_components = [row[1].x() for row in glider_log]  # Extracting x components
-    glider_y_components = [row[1].y() for row in glider_log]  # Extracting y components
-    glider_z_components = [row[1].z() for row in glider_log]  # Extracting z components
+    glider_x_components = [row[1].x() for row in glider_log]
+    glider_y_components = [row[1].y() for row in glider_log]
+    glider_z_pos = [row[1].z() for row in glider_log]
+    glider_z_vel = [row[2].z() for row in glider_log]
+    glider_z_acc = [row[3].z() for row in glider_log]
+
+    glider_roll = [row[5].x() * 180.0 / SimMath.pi for row in glider_log]
+    glider_pitch = [row[5].y() * 180.0 / SimMath.pi for row in glider_log]
+    glider_yaw = [row[5].z() * 180.0 / SimMath.pi for row in glider_log]
+    # glider_pitch_vel = [row[6].y() * 180.0 / SimMath.pi for row in glider_log]
+    # glider_pitch_acc = [row[7].y() * 180.0 / SimMath.pi for row in glider_log]
+
+    glider_tank = [row[4] for row in glider_log]  # Extracting z components
 
     control_time = [row[0] for row in control_log]
     control_vars = list(zip(*control_log))[1:]
@@ -138,29 +136,40 @@ def do_sim() -> None:
 
     # Create a new figure for the x-y plot
     plt.figure()
-    plt.plot(glider_x_components, glider_y_components, label="x vs y")
+    sc = plt.scatter(glider_x_components, glider_y_components, c = glider_time, cmap = "viridis")
     plt.xlabel("X Component")
     plt.ylabel("Y Component")
     plt.legend(loc="lower left")
     plt.axis('equal')  # Automatic scaling
     plt.title("X vs Y Components")
     plt.grid(True)
+    plt.colorbar(sc, label="Time")
     plt.show()
 
     # Create subplots for the remaining plots
-    fig, axs = plt.subplots(2, 1, sharex=True)
+    fig, axs = plt.subplots(3, 1, sharex=True)
 
     # Plotting z components against time
-    axs[0].plot(glider_time, glider_z_components, label="z component")
-    axs[0].set_ylabel("Z Component")
+    axs[1].plot(glider_time, glider_z_pos, label="pos")
+    axs[1].plot(glider_time, glider_z_vel, label="vel")
+    axs[1].plot(glider_time, glider_z_acc, label="acc")
+
+    axs[0].plot(glider_time, glider_roll, label="roll")
+    axs[0].plot(glider_time, glider_pitch, label="pitch")
+    axs[0].plot(glider_time, glider_yaw, label="yaw")
+
+    axs[1].plot(glider_time, glider_tank, label = "tank")
+    
+    axs[1].set_ylabel("Z Component")
+    axs[1].legend(loc="lower left")
     axs[0].legend(loc="lower left")
 
     # Plotting control variables
     for i, var in enumerate(control_vars):
-        axs[1].plot(control_time, var, label=control_labels[i])
+        axs[2].plot(control_time, var, label=control_labels[i])
 
-    axs[1].set_ylabel("Control")
-    axs[1].legend(loc="lower left")
+    axs[2].set_ylabel("Control")
+    axs[2].legend(loc="lower left")
 
     fig.supxlabel("Time")
     plt.title(f"Glider Dynamics")

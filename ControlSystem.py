@@ -102,9 +102,6 @@ class PIDController:
         Returns:
             float: The calculated output value.
 
-        Raises:
-            ValueError: If the time value is smaller or equal to the previous time value.
-
         """
 
         error = target - input
@@ -117,9 +114,6 @@ class PIDController:
             return 0
 
         time_delta = time - self.prev_time
-
-        if time_delta <= 0:
-            raise ValueError("time must be larger than prev time")
         
 
         # Integral windup prevention
@@ -243,14 +237,15 @@ class ControlSystem:
         # Glide path parameters
         self.min_depth: float = config["high_depth"]
         self.max_depth: float = config["low_depth"]
-        self.target_depth: float = self.min_depth
+        self.target_depth: float = self.max_depth
 
         # Logging
         self.logger = Logger()
 
 
 
-    def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, tank: float, time: float) -> float:
+    def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, tank: float, time: float,
+                 other_to_log: list = []) -> float:
         """
         Calculates the acceleration command for the glider.
 
@@ -266,7 +261,7 @@ class ControlSystem:
         """
 
         self.time = time
-        self.logger.glider_log.append([time, position, velocity, acceleration, (tank - 1) * 10])
+        self.logger.glider_log.append([time, position, velocity, acceleration, (tank - 1) * 10] + other_to_log)
 
         if time < self.prev_update_time + self.period:
             return self.prev_command

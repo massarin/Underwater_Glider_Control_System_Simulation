@@ -137,6 +137,36 @@ class Vector:
     
 
 
+    def modulo(self, val: float) -> 'Vector':
+
+        return Vector(self.x() % val, self.y() % val, self.z() % val)
+    
+
+
+    def loop(self, low: float, high: float) -> 'Vector':
+        """
+        Loops the vector's coordinates between the specified low and high values.
+
+        Args:
+            low (float): The lower bound value.
+            high (float): The upper bound value.
+
+        Returns:
+            Vector: A new Vector instance with looped coordinates.
+        """
+
+        # return self.modulo(high - low) + Vector(low, low, low)
+        range_size = high - low
+
+        looped_x = ((self.x() - low) % range_size) + low
+        looped_y = ((self.y() - low) % range_size) + low
+        looped_z = ((self.z() - low) % range_size) + low
+
+        return Vector(looped_x, looped_y, looped_z)
+        
+    
+
+
     def dot(self, other: 'Vector') -> float:
         return np.dot(self.vec, other.vec)
     
@@ -172,6 +202,23 @@ class Vector:
 
         added_vec = self.vec + other.vec
         return Vector(added_vec[0], added_vec[1], added_vec[2])
+    
+
+
+
+    def __sub__(self, other: 'Vector') -> 'Vector':
+        """
+        Performs component-wise subtraction with another vector.
+
+        Args:
+            other (Vector): Another vector to perform subtraction with.
+
+        Returns:
+            Vector: A new Vector instance representing the result of the subtraction.
+        """
+
+        subtracted_vec = self.vec - other.vec
+        return Vector(subtracted_vec[0], subtracted_vec[1], subtracted_vec[2])
     
 
 
@@ -261,7 +308,7 @@ def euler_to_direction(roll: float, pitch: float, yaw: float) -> 'Vector':
 
 
 
-def euler_to_rotation_matrix(roll: float, pitch: float, yaw: float) -> np.ndarray:
+def euler_to_rotation_matrix(euler_angles: Vector) -> np.ndarray:
     """
     Converts Euler angles to a rotation matrix.
 
@@ -273,6 +320,10 @@ def euler_to_rotation_matrix(roll: float, pitch: float, yaw: float) -> np.ndarra
     Returns:
         np.ndarray: The rotation matrix.
     """
+    roll = euler_angles.x()
+    pitch = euler_angles.y()
+    yaw = euler_angles.z()
+
     # Rotation matrix for roll
     R_x = np.array([
         [1,             0,             0],
