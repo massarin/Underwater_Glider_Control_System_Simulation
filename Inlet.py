@@ -3,10 +3,11 @@ import SimMath
 
 from SimMath import Vector
 
-"""
-The average mass of seawater (kg / m^3)
-"""
+'''
+Module with parameters for Saanich Inlet
+'''
 
+# The average mass of seawater (kg / m^3)
 density: float = 1024
 
 gravity: Vector = Vector(0, 0, -9.81)

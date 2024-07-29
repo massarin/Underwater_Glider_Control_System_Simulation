@@ -79,6 +79,7 @@
             "lift_multiplier": 1.0,
             "lift_curve_slope": 10.0,
             "stall_angle": 0.17,
+            "drag_multiplier": 1.0,
             "position": {
                 "x": -0.5,
                 "y": 0.0,

@@ -8,12 +8,14 @@ import Inlet
 
 import numpy as np
 
+# TODO: Use interfaces or abandon OOP
 
 
 
 
 
-class GliderBody():
+
+class GliderBody:
     """
     Represents the body of a glider. It is a capsule.
 
@@ -80,7 +82,7 @@ class GliderBody():
         # Drag equation
         local_drag = Vector(front_drag, side_drag, top_drag) * (0.5 * Inlet.density)
         
-        return local_drag
+        return local_drag * self.drag_multiplier
 
 
 
@@ -174,7 +176,8 @@ class Hydrofoil:
 
     def __init__(self, reference_area: float, lift_multiplier: float,
                  lift_curve_slope: float, stall_angle: float,
-                 position: dict, mass: float) -> None:
+                 position: dict,
+                 drag_multiplier: float, mass: float) -> None:
         
         self.reference_area: float = reference_area
 
@@ -187,6 +190,7 @@ class Hydrofoil:
         self.position: Vector = Vector(**position)
         self.mass: float = mass
 
+        self.drag_multiplier = drag_multiplier
 
         # The drag on the front and side is negligible
         self.front_area: float = 0.0
@@ -220,7 +224,7 @@ class Hydrofoil:
         # Drag equation
         local_drag = Vector(front_drag, side_drag, top_drag) * (0.5 * Inlet.density)
         
-        return local_drag
+        return local_drag * self.drag_multiplier
 
     
 
@@ -236,7 +240,7 @@ class Hydrofoil:
         elif angle < 0.7854: # pi / 4
             lift_coefficient = SimMath.lerp(self.lift_curve_slope * self.stall_angle, 0.0, angle - self.stall_angle)
         
-        return SimMath.sign(angle_of_attack) * lift_coefficient * self.lift_multiplier
+        return SimMath.sign(angle_of_attack) * lift_coefficient
     
 
 
@@ -250,7 +254,7 @@ class Hydrofoil:
 
         local_lift = Vector(z = lift_coefficient * dynamic_pressure * self.reference_area)
 
-        return local_lift
+        return local_lift * self.lift_multiplier
 
 
 
@@ -298,9 +302,7 @@ class Glider:
         """
         
         self.body: GliderBody = body
-
         self.buoyancy_engine: BuoyancyEngine = buoyancy_engine
-
         self.hydrofoil: Hydrofoil = hydrofoil
 
         self.control_system: ControlSystem = control_system
@@ -394,7 +396,6 @@ class Glider:
 
 
         # Drag
-        # TODO: Center of drag calculation, this should include wing drag (not calculated yet)
         center_of_linear_drag = Vector((self.body.position.x() * body_drag.x())\
                                             + (self.hydrofoil.position.x() * hydrofoil_drag.x()),
                                        (self.body.position.y() * body_drag.y())\
@@ -404,7 +405,7 @@ class Glider:
 
         drag_torque = (center_of_linear_drag - center_of_mass).cross(total_linear_drag)
 
-        # Simplified model
+        # Simplified model TODO: Make more accurate
         angular_drag_torque = self.angular_velocity * (-1 * 2.0)
 
 

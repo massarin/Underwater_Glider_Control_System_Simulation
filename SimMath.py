@@ -442,10 +442,3 @@ def sign(val: int | float) -> int:
         return 0
     
     return -1
-
-
-
-
-def arccos(theta: float) -> float:
-
-    return np.arccos(theta)
