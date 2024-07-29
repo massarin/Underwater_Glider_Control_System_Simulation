@@ -1,13 +1,19 @@
 
 # Glider Control System Simulation
 
+## Intro
+
+This program simulates the physics of an underwater glider, including drag, buoyancy, and lift. It also simulates a control system for the glider.
+
 ## Background
 
-The CS for the Glider must be tuned. This is a long process that, if done entirely in Saanich Inlet with an assembled Glider, would take a long time and involve risk of losing the Glider.
+I wrote this program for [UVEEC](https://www.uveec.ca), a club at the University of Victoria.
+The club's current project is to design and build an underwater glider to be deployed in Saanich Inlet to collect data. As one of the club's software team leads, my job is to design the control system. Part of that control system is designed to control the depth and movement of the glider.
+The control system for the Glider must be tuned. This is a long process that, if done entirely in Saanich Inlet with an assembled Glider, would take a long time and involve risk of losing the Glider.
 
 ## Purpose
 
-The control system can be simulated using this program, allowing for preliminary tuning parameters to be found
+The control system can be simulated using this program, allowing for preliminary tuning parameters to be found.
 
 ## Running
 
