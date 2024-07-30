@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+import csv
+
 import json
 
 import sys
@@ -115,20 +117,45 @@ def do_sim() -> None:
     glider_log = np.array(glider.control_system.logger.glider_log)
     control_log = np.array(glider.control_system.logger.control_log)
 
-    glider_time = [row[0] for row in glider_log]
-    glider_x_components = [row[1].x() for row in glider_log]
-    glider_y_components = [row[1].y() for row in glider_log]
-    glider_z_pos = [row[1].z() for row in glider_log]
-    glider_z_vel = [row[2].z() for row in glider_log]
-    glider_z_acc = [row[3].z() for row in glider_log]
 
-    glider_roll = [row[5].x() * 180.0 / SimMath.pi for row in glider_log]
-    glider_pitch = [row[5].y() * 180.0 / SimMath.pi for row in glider_log]
-    glider_yaw = [row[5].z() * 180.0 / SimMath.pi for row in glider_log]
+    # Downsample the data to 24 FPS
+    sampling_rate = 100  # Original sampling rate (100 Hz)
+    target_rate = 24  # Target sampling rate (24 FPS)
+    downsample_factor = sampling_rate // target_rate
+
+    glider_log_downsampled = glider_log[::downsample_factor]
+    control_log_downsampled = control_log[::downsample_factor]
+
+
+    # Export glider_log to CSV
+    with open('animation/glider_log.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['time', 'position_x', 'position_y', 'position_z', "velocity", "acceleration", "tank", 'roll', 'pitch', 'yaw'])
+        for row in glider_log_downsampled:
+            writer.writerow(row)
+
+    # Export control_log to CSV
+    with open('animation/control_log.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['time', 'control_input'])
+        for row in control_log_downsampled:
+            writer.writerow(row)
+    
+
+    glider_time = [row[0] for row in glider_log]
+    glider_x_components = [row[1] for row in glider_log]
+    glider_y_components = [row[2] for row in glider_log]
+    glider_z_pos = [row[3] for row in glider_log]
+    glider_z_vel = [row[4].z() for row in glider_log]
+    glider_z_acc = [row[5].z() for row in glider_log]
+
+    glider_roll = [row[7] * 180.0 / SimMath.pi for row in glider_log]
+    glider_pitch = [row[8] * 180.0 / SimMath.pi for row in glider_log]
+    glider_yaw = [row[9] * 180.0 / SimMath.pi for row in glider_log]
     # glider_pitch_vel = [row[6].y() * 180.0 / SimMath.pi for row in glider_log]
     # glider_pitch_acc = [row[7].y() * 180.0 / SimMath.pi for row in glider_log]
 
-    glider_tank = [row[4] for row in glider_log]  # Extracting z components
+    glider_tank = [row[6] for row in glider_log]  # Extracting z components
 
     control_time = [row[0] for row in control_log]
     control_vars = list(zip(*control_log))[1:]

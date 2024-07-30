@@ -262,7 +262,10 @@ class ControlSystem:
         """
 
         self.time = time
-        self.logger.glider_log.append([time, position, velocity, acceleration, (tank - 1) * 10] + other_to_log)
+        self.logger.glider_log.append([time,
+                                       position.x(), position.y(), position.z(),
+                                       velocity, acceleration,
+                                       (tank - 1) * 10] + other_to_log)
 
         if time < self.prev_update_time + self.period:
             return self.prev_command
