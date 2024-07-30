@@ -1,4 +1,7 @@
 
+from abc import ABC, abstractmethod
+from typing import List
+
 from ControlSystem import ControlSystem
 
 import SimMath
@@ -8,14 +11,58 @@ import Inlet
 
 import numpy as np
 
+
+
 # TODO: Use interfaces or abandon OOP
 
+class GliderComponent(ABC):
+
+    @abstractmethod
+    def compute_drag_force(self, local_flow: Vector) -> Vector:
+        return Vector()
+
+    @abstractmethod
+    def compute_lift_force(self, local_flow: Vector) -> Vector:
+        return Vector()
+
+
+
+    @property
+    def mass(self) -> float:
+        return self._mass
+    
+
+    @mass.setter
+    def mass(self, value: float) -> None:
+        self._mass = value
+
+
+
+    @property
+    def buoyancy_volume(self) -> float:
+        return self._buoyancy_volume
+    
+    
+    @buoyancy_volume.setter
+    def buoyancy_volume(self, value: float) -> None:
+        self._buoyancy_volume = value
+    
+
+
+    @property
+    def position(self) -> Vector:
+        return self._position
+    
+    
+    @position.setter
+    def position(self, value: Vector) -> None:
+        self._position = value
 
 
 
 
 
-class GliderBody:
+class GliderBody(GliderComponent):
     """
     Represents the body of a glider. It is a capsule.
 
@@ -38,8 +85,8 @@ class GliderBody:
 
     def __init__(self, mass: float, length: float, radius: float, drag_multiplier: float) -> None:
         
-        self.mass: float = mass
-        self.position: Vector = Vector()
+        self._mass: float = mass
+        self._position: Vector = Vector()
 
         self.length: float = length
         self.radius: float = radius
@@ -47,6 +94,8 @@ class GliderBody:
         # Volume of the cylinder + volume of the two hemispheres
         self.volume: float = (SimMath.pi * length * radius * radius)\
                            + ((4.0 / 3.0) * SimMath.pi * radius * radius * radius)
+        
+        self._buoyancy_volume: float = self.volume
         
 
         self.drag_multiplier: float = drag_multiplier
@@ -83,24 +132,17 @@ class GliderBody:
         local_drag = Vector(front_drag, side_drag, top_drag) * (0.5 * Inlet.density)
         
         return local_drag * self.drag_multiplier
+    
 
 
-
-    def compute_gravity_force(self) -> Vector:
-        """
-        Computes the gravity force acting on the glider body.
-
-        Returns:
-            Vector: The gravity force acting on the glider body.
-        """
-
-        return Inlet.gravity * self.mass
+    def compute_lift_force(self, local_flow: Vector) -> Vector:
+        return super().compute_lift_force(local_flow)
 
 
 
 
 
-class BuoyancyEngine:
+class BuoyancyEngine(GliderComponent):
     """
     The BuoyancyEngine class represents an engine that calculates buoyancy and gravity forces for a tank.
 
@@ -127,13 +169,13 @@ class BuoyancyEngine:
         self.tank_volume: float = tank_volume
         self.proportion_full: float = initial_proportion_full
         self.ballast_volume: float = self.tank_volume * self.proportion_full
-        self.buoyancy_volume: float = self.tank_volume - self.ballast_volume
+        self._buoyancy_volume: float = self.tank_volume - self.ballast_volume
 
         self.pump_rate: float = initial_pump_rate
         self.max_pump_rate: float = max_pump_rate
 
-        self.position: Vector = Vector(**position)
-        self.mass: float = 0.0
+        self._position: Vector = Vector(**position)
+        self._mass: float = 0.0
 
 
 
@@ -156,23 +198,18 @@ class BuoyancyEngine:
 
 
 
-    def compute_gravity_force(self) -> Vector:
-        """
-        Computes the gravity force based on the tank volume and proportion full.
+    def compute_drag_force(self, local_flow: Vector) -> Vector:
+        return super().compute_drag_force(local_flow)
+    
 
-        Returns:
-            Vector: The computed gravity force.
-
-        """
-
-        gravity_volume = self.tank_volume * self.proportion_full
-        return Inlet.gravity * (Inlet.density * gravity_volume)
+    def compute_lift_force(self, local_flow: Vector) -> Vector:
+        return super().compute_lift_force(local_flow)
 
 
 
 
 
-class Hydrofoil:
+class Hydrofoil(GliderComponent):
 
     def __init__(self, reference_area: float, lift_multiplier: float,
                  lift_curve_slope: float, stall_angle: float,
@@ -187,8 +224,8 @@ class Hydrofoil:
 
         self.stall_angle: float = stall_angle
 
-        self.position: Vector = Vector(**position)
-        self.mass: float = mass
+        self._position: Vector = Vector(**position)
+        self._mass: float = mass
 
         self.drag_multiplier = drag_multiplier
 
@@ -200,6 +237,8 @@ class Hydrofoil:
 
         self.front_drag_coefficient = 0.04
         self.side_drag_coefficient = 1.2
+
+        self._buoyancy_volume = 0.0
 
 
 
@@ -305,6 +344,10 @@ class Glider:
         self.buoyancy_engine: BuoyancyEngine = buoyancy_engine
         self.hydrofoil: Hydrofoil = hydrofoil
 
+        self.body.buoyancy_volume -= self.buoyancy_engine.tank_volume
+
+        self.components: List[GliderComponent] = [self.body, self.buoyancy_engine, self.hydrofoil]
+
         self.control_system: ControlSystem = control_system
 
         self.position: Vector = initial_position
@@ -316,9 +359,10 @@ class Glider:
         self.angular_velocity: Vector = initial_angular_velocity
         self.angular_acceleration: Vector = initial_angular_acceleration
 
+        # TODO: This should be a component-wise computation
         self.moment_of_inertia: Vector = Vector(0.5 * self.body.radius ** 2,
-                                                (1.0 / 12.0) * ((3.0 * self.body.radius ** 2) + (self.body.length ** 2)),
-                                                (1.0 / 12.0) * ((3.0 * self.body.radius ** 2) + (self.body.length ** 2)))
+                                               (1.0 / 12.0) * ((3.0 * self.body.radius ** 2) + (self.body.length ** 2)),
+                                               (1.0 / 12.0) * ((3.0 * self.body.radius ** 2) + (self.body.length ** 2)))
 
         self.time: float = 0.0
 
@@ -344,32 +388,68 @@ class Glider:
         local_flow.vec = -np.dot(rotation_matrix.T, self.velocity.vec)
 
 
-        total_mass = self.body.mass + self.buoyancy_engine.mass + self.hydrofoil.mass
-        total_volume = self.body.volume
-
-
         # Forces
-        total_buoyancy = local_gravity * (-1.0 * Inlet.density * total_volume)
+        center_of_linear_drag = Vector()
+        total_linear_drag = Vector()
+        total_linear_drag_magnitude = 0.0
 
-        body_drag = self.body.compute_drag_force(local_flow)
-        hydrofoil_drag = self.hydrofoil.compute_drag_force(local_flow)
-        total_linear_drag = body_drag + hydrofoil_drag
+        center_of_lift = Vector()
+        total_lift = Vector()
+        total_lift_magnitude = 0.0
+
+        center_of_mass = Vector()
+        total_mass = 0.0
+
+        center_of_volume = Vector()
+        total_volume = 0.0
+
+
+        for component in self.components:
+
+            # Vector quantities
+            component_drag = component.compute_drag_force(local_flow)
+            center_of_linear_drag += component.position * component_drag.magnitude()
+            total_linear_drag += component_drag
+            total_linear_drag_magnitude += component_drag.magnitude()
+
+            component_lift = component.compute_lift_force(local_flow)
+            center_of_lift += component.position * component_lift.magnitude()
+            total_lift += component_lift
+            total_lift_magnitude += component_lift.magnitude()
+
+            # Scalar quantities
+            center_of_mass += component.position * component.mass
+            total_mass += component.mass
+
+            center_of_volume += component.position * component.buoyancy_volume
+            total_volume += component.buoyancy_volume
+
+
+        if total_linear_drag_magnitude > 0.0:
+            center_of_linear_drag /= total_linear_drag_magnitude
+
+        if total_lift_magnitude > 0.0:
+            center_of_lift /= total_lift_magnitude
+
+        if total_mass > 0.0:
+            center_of_mass /= total_mass
+
+        if total_volume > 0.0:
+            center_of_volume /= total_volume
+
 
         total_gravity = local_gravity * total_mass
+
+        total_buoyancy = local_gravity * (-1.0 * Inlet.density * total_volume)
 
         total_lift = self.hydrofoil.compute_lift_force(local_flow)
 
         total_force = total_buoyancy + total_linear_drag + total_gravity + total_lift
 
+
         world_force = Vector()
         world_force.vec = np.dot(rotation_matrix, total_force.vec)
-
-        # if self.acceleration.magnitude() > 100:
-        #     print(f"{total_buoyancy.z()}\t{total_linear_drag.z()}\t{total_gravity.z()}\t{total_lift.z()}\t{(world_force / total_mass).z()}")
-        #     print(f"{self.acceleration.z()}\t{self.velocity.z()}\t{self.position.z()}\t{time_step}")
-        #     print(f"{self.velocity.z()}\t{(self.acceleration * time_step).z()}\t{(self.velocity + (self.acceleration * time_step)).z()}\t{time_step}")
-        #     print()
-        #     print()
+        
 
         self.acceleration = world_force / total_mass
         self.velocity += self.acceleration * time_step
@@ -379,30 +459,13 @@ class Glider:
         # Torques
 
         # Center of mass is the pivot point
-        center_of_mass = (self.body.position * self.body.mass)\
-                       + (self.buoyancy_engine.position * self.buoyancy_engine.mass)\
-                       + (self.hydrofoil.position * self.hydrofoil.mass)
-
-        center_of_mass /= total_mass
 
 
         # Buoyancy
-        center_of_volume = self.body.position * (self.body.volume - self.buoyancy_engine.tank_volume)\
-                         + self.buoyancy_engine.position * (self.buoyancy_engine.ballast_volume)
-        
-        center_of_volume /= total_volume
-        
         buoyancy_torque = (center_of_volume - center_of_mass).cross(total_buoyancy)
 
 
         # Drag
-        center_of_linear_drag = Vector((self.body.position.x() * body_drag.x())\
-                                            + (self.hydrofoil.position.x() * hydrofoil_drag.x()),
-                                       (self.body.position.y() * body_drag.y())\
-                                            + (self.hydrofoil.position.y() * hydrofoil_drag.y()),
-                                       (self.body.position.z() * body_drag.z())\
-                                            + (self.hydrofoil.position.z() * hydrofoil_drag.z()))
-
         drag_torque = (center_of_linear_drag - center_of_mass).cross(total_linear_drag)
 
         # Simplified model TODO: Make more accurate
@@ -420,7 +483,7 @@ class Glider:
 
         mass_moment = self.moment_of_inertia * total_mass
 
-        # Parallel axis theorem
+        # Parallel axis theorem TODO: Component-wise computation
         moment = Vector(mass_moment.x() + total_mass * center_of_mass.x() ** 2,
                         mass_moment.y() + total_mass * center_of_mass.y() ** 2,
                         mass_moment.z() + total_mass * center_of_mass.z() ** 2)
@@ -449,7 +512,8 @@ class Glider:
 
         command = self.control_system.calc_acc(self.position, self.velocity, self.acceleration,
                                                self.buoyancy_engine.proportion_full, time,
-                                               [self.orientation, self.angular_velocity, self.angular_acceleration])
+                                               [self.orientation.x(), self.orientation.y(), self.orientation.z(),
+                                                self.angular_velocity, self.angular_acceleration])
 
         self.buoyancy_engine.pump_rate = command
 
