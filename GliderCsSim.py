@@ -65,7 +65,7 @@ def do_sim() -> None:
             config_path = arg
 
     if config_path is None:
-        print(f"Usage: {"".join(sys.argv)} /path/to/config.json")
+        print(f"Usage: {''.join(sys.argv)} /path/to/config.json")
 
         while config_path is None:
             arg = input("Please enter config path: ")
