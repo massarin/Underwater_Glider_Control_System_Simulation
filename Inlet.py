@@ -8,7 +8,7 @@ Module with parameters for Saanich Inlet
 '''
 
 # The average mass of seawater (kg / m^3)
-density: float = 1024
+density: float = 999
 
 gravity: Vector = Vector(0, 0, -9.81)
 
