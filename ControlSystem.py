@@ -1,8 +1,8 @@
-
 import typing
 
 import SimMath
 from SimMath import Vector
+from numpy import sign
 
 
 
@@ -28,9 +28,6 @@ class Logger:
         self.control_log: list = []
 
 
-
-
-
 class PIDController:
     """
     Simple PID controller implementation.
@@ -52,7 +49,7 @@ class PIDController:
         update(target: float, input: float, time: float) -> float:
             Updates the PID controller with the given target, input, and time values.
     """
-    
+
     def __init__(self, kp: float = 1, ki: float = 0, kd: float = 0,
                  integral_limit: float = 1_000, output_limit: float = 1_000) -> None:
         """
@@ -88,8 +85,6 @@ class PIDController:
         # Integral term
         self.integral: float = 0.0
 
-
-
     def update(self, target: float, input: float, time: float) -> float:
         """
         Updates the PID controller with the given target, input, and time values.
@@ -113,9 +108,7 @@ class PIDController:
             self.prev_input = input
             return 0
 
-
         time_delta = time - self.prev_time
-        
 
         # Integral windup prevention
         self.integral = SimMath.clamp_mag(self.integral + (error * time_delta), self.integral_limit)
@@ -133,9 +126,6 @@ class PIDController:
         return SimMath.clamp_mag(output, self.output_limit)
 
 
-
-
-
 """
 Typedef for the StateMachine class
 
@@ -145,8 +135,6 @@ State = int
 StateGraph = typing.Dict[State, typing.List[State]]
 diving = State(0)
 surfacing = State(1)
-
-
 
 
 class StateMachine:
@@ -172,8 +160,6 @@ class StateMachine:
 
         self.state: State = initial_state
         self.state_graph: StateGraph = state_graph
-    
-
 
     def next(self) -> None:
         """
@@ -181,10 +167,6 @@ class StateMachine:
         """
 
         self.state = self.state_graph[self.state][0]
-
-
-
-
 
 
 class ControlSystem:
@@ -217,33 +199,40 @@ class ControlSystem:
 
         # Initialize state machine
         state_graph: StateGraph = {
-            diving : [surfacing],
-            surfacing : [diving]
+            diving: [surfacing],
+            surfacing: [diving]
         }
         self.state_machine: StateMachine = StateMachine(state_graph, diving)
 
-        self.frequency: int = config["frequency"]
+        self.frequency: int = config["control_system"]["frequency"]
         self.period: float = 1.0 / self.frequency
 
         self.time: float = 0.0
         self.prev_update_time: float = self.time
 
         self.prev_command: float = 0.0
+        self.prev_error_signal: float = 0.0
+        self.error_tollerance: float = 0.2  # Reduced error tolerance
 
-        # Create cascading PID controllers
-        self.pid_depth = PIDController(**config['pid_depth'])
-        self.pid_v_vel = PIDController(**config['pid_v_vel'])
-        self.pid_v_acc = PIDController(**config['pid_v_acc'])
+        # Create cascading PID controllers (can be kept for other control modes)
+        self.pid_depth = PIDController(**config["control_system"]['pid_depth'])
+        self.pid_v_vel = PIDController(**config["control_system"]['pid_v_vel'])
+        self.pid_v_acc = PIDController(**config["control_system"]['pid_v_acc'])
 
         # Glide path parameters
-        self.min_depth: float = config["high_depth"]
-        self.max_depth: float = config["low_depth"]
+        self.min_depth: float = config["control_system"]["high_depth"]
+        self.max_depth: float = config["control_system"]["low_depth"]
         self.target_depth: float = self.max_depth
 
         # Logging
         self.logger = Logger()
 
-
+        # Predictive Bang-Bang Control Parameters
+        self.max_pump_rate: float = config["buoyancy_engine"]["max_pump_rate"]
+        self.tank_volume: float = config["buoyancy_engine"]["tank_volume"]  # Assuming this is available
+        self.prediction_tuning_factor: float = config["bang_bang_control"]["prediction_tuning_factor"]  # Your initial guess for the average flow effect
+        self.velocity_prediction_factor: float = config["bang_bang_control"]["velocity_prediction_factor"]  # Your assumption of linear velocity decrease
+        self.actuation_time_constant_scale: float = config["bang_bang_control"]["actuation_time_constant_scale"] # Tune this overall scale factor
 
     def calc_acc(self, position: Vector, velocity: Vector, acceleration: Vector, tank: float, time: float,
                  other_to_log: list = []) -> float:
@@ -254,11 +243,11 @@ class ControlSystem:
             position (Vector): The current position of the glider.
             velocity (Vector): The current velocity of the glider.
             acceleration (Vector): The current acceleration of the glider.
-            tank (float): The current tank level.
+            tank (float): The current tank level (assuming this can be used to estimate tank_portion_filled).
             time (float): The current time.
 
         Returns:
-            float: The acceleration command for the glider.
+            float: The acceleration command for the glider (flow_rate in this case).
         """
 
         self.time = time
@@ -273,7 +262,6 @@ class ControlSystem:
         self.prev_update_time = time
 
         # Swap states when needed
-        # TODO: There needs to be a better way to do this (the state machine should do it with a single method call)
         if self.state_machine.state == diving:
             if position.z() <= self.target_depth:
                 self.target_depth = self.min_depth
@@ -283,14 +271,47 @@ class ControlSystem:
                 self.target_depth = self.max_depth
                 self.state_machine.next()
 
-        # depth -> v_vel -> v_acc
-        pid_depth_output = self.pid_depth.update(self.target_depth, position.z(), time)
-        pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, velocity.z(), time)
-        pid_v_acc_output = self.pid_v_acc.update(pid_v_vel_output, acceleration.z(), time)
+        # Predictive Bang-Bang Control
+        current_depth = position.z()
+        vertical_velocity = velocity.z()
+        depth_error_raw = self.target_depth - current_depth
 
-        self.logger.control_log.append([time, self.target_depth, pid_depth_output, pid_v_vel_output, pid_v_acc_output])
+        # Estimate tank_portion_filled (assuming tank range is -1 to 1)
+        tank_proportion_from_neutral = abs(tank) / 1  # Proportion away from neutral
+        normalized_tank_proportion = SimMath.clamp(abs(tank) / 1, 0.0, 1.0)
 
-        command = -pid_v_acc_output
+
+        # Estimate time to stop actuation (proportional to how much change is needed)
+        if self.max_pump_rate > 1e-9: # Avoid division by zero
+            tau_actuation = normalized_tank_proportion * self.tank_volume / self.max_pump_rate * self.prediction_tuning_factor
+        else:
+            tau_actuation = 0.0
+
+        # Estimate distance to stop based on current velocity
+        distance_to_stop = abs(vertical_velocity) * tau_actuation * self.velocity_prediction_factor
+
+        # Error signal based on predicted overshoot/undershoot
+        error_signal = distance_to_stop - abs(depth_error_raw)
+        self.prev_error_signal = error_signal
+
+        commanded_flow_rate = 0.0
+
+        # Control logic based on the error signal
+        if depth_error_raw > 0 and error_signal > 0 and abs(error_signal) > self.error_tollerance: # Need to go deeper and predicting overshoot
+            commanded_flow_rate = -self.max_pump_rate # Start emptying (go up) earlier
+        elif depth_error_raw < 0 and error_signal < 0 and abs(error_signal) > self.error_tollerance: # Need to go shallower and predicting undershoot
+            commanded_flow_rate = self.max_pump_rate  # Start filling (go down) earlier
+        elif depth_error_raw > self.error_tollerance: # Need to go deeper
+            commanded_flow_rate = self.max_pump_rate
+        elif depth_error_raw < -self.error_tollerance:
+            commanded_flow_rate = -self.max_pump_rate
+        else:
+            commanded_flow_rate = 0.0
+
+        command = commanded_flow_rate
         self.prev_command = command
+
+        # Logging
+        self.logger.control_log.append([time, self.target_depth, error_signal, depth_error_raw, 50*sign(command)])
 
         return command

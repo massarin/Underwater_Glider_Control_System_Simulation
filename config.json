@@ -33,17 +33,22 @@
 
             "pid_v_acc": {
 
-                "kp": 0.1,
+                "kp": 0.01,
                 "ki": 0,
                 "kd": 0,
                 "integral_limit": 100.0,
-                "output_limit": 0.01
+                "output_limit": 0.001
             },
-    
 
             "high_depth": -20.0,
             "low_depth": -70.0,
             "frequency": 10
+        },
+
+        "bang_bang_control": {
+            "prediction_tuning_factor": 0.5,
+            "velocity_prediction_factor": 0.5,
+            "actuation_time_constant_scale": 1.0
         },
 
 
@@ -61,9 +66,9 @@
         "buoyancy_engine": {
 
             "tank_volume": 0.002275,
-            "initial_proportion_full": 1.0,
+            "initial_proportion_full": 0,
             "initial_pump_rate": 0.0,
-            "max_pump_rate": 0.01,
+            "max_pump_rate": 0.001,
             "position": {
                 "x": 0.5,
                 "y": 0.0,

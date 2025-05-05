@@ -84,7 +84,7 @@ def do_sim() -> None:
     glider = Glider.Glider(body = Glider.GliderBody(**glider_config["hull"]),
                            buoyancy_engine = Glider.BuoyancyEngine(**glider_config["buoyancy_engine"]),
                            hydrofoil = Glider.Hydrofoil(**glider_config["hydrofoil"]),
-                           control_system = ControlSystem.ControlSystem(glider_config["control_system"]),
+                           control_system = ControlSystem.ControlSystem(glider_config),
                            initial_position = Vector(**glider_config["initial_position"]),
                            initial_velocity = Vector(**glider_config["initial_velocity"]),
                            initial_acceleration = Vector(**glider_config["initial_acceleration"]),
