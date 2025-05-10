@@ -135,6 +135,6 @@
     "sim": {
 
         "timestep": 0.01,
-        "end_time": 1000.0
+        "end_time": 300.0
     }
 }
