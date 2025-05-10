@@ -228,6 +228,8 @@ class ControlSystem:
         self.time: float = 0.0
         self.prev_update_time: float = self.time
 
+        self.prev_position: Vector = Vector(0, 0, 0)
+
         self.prev_command: float = 0.0
 
         # Create cascading PID controllers
@@ -269,7 +271,9 @@ class ControlSystem:
 
         if time < self.prev_update_time + self.period:
             return self.prev_command
-
+        
+        vel_est = (position.z() - self.prev_position.z()) / (time - self.prev_update_time)
+        self.prev_position = position
         self.prev_update_time = time
 
         """
@@ -287,8 +291,9 @@ class ControlSystem:
 
         # depth -> v_vel -> v_acc
         pid_depth_output = self.pid_depth.update(self.target_depth, position.z(), time)
-        pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, velocity.z(), time)
+        pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, vel_est, time)
         pid_v_acc_output = self.pid_v_acc.update(pid_v_vel_output, acceleration.z(), time)
+        
 
         self.logger.control_log.append([time, self.target_depth, pid_depth_output, pid_v_vel_output, pid_v_acc_output])
 
