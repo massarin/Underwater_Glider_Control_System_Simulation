@@ -1,4 +1,3 @@
-
 import typing
 
 import SimMath
@@ -205,6 +204,8 @@ class ControlSystem:
         max_depth (float): The maximum depth for the glider.
         target_depth (float): The target depth for the glider.
         logger (Logger): The logger for logging control system data.
+        previous_positions (list): Stores the past positions for calculating derivatives
+        num_past_positions (int): The number of past positions to use for calculations
     """
 
     def __init__(self, config: dict) -> None:
@@ -227,9 +228,6 @@ class ControlSystem:
 
         self.time: float = 0.0
         self.prev_update_time: float = self.time
-
-        self.prev_position: Vector = Vector(0, 0, 0)
-
         self.prev_command: float = 0.0
 
         # Create cascading PID controllers
@@ -244,6 +242,58 @@ class ControlSystem:
 
         # Logging
         self.logger = Logger()
+
+        # Store past positions.  We need at least 3 for central difference acceleration.
+        self.previous_positions: list[Vector] = []
+        self.num_past_positions: int = 3 # Number of past positions to store
+        self.previous_times: list[float] = []
+
+
+
+    def estimate_velocity(self, positions: list[Vector], times: list[float]) -> float | None:
+        """
+        Estimates the vertical velocity using the central difference method.
+
+        Args:
+            positions (list[Vector]): A list of past position vectors.
+            times (list[float]): A list of corresponding times.
+
+        Returns:
+            float | None: The estimated vertical velocity, or None if insufficient data.
+        """
+        if len(positions) < 2:
+            return None  # Not enough data for velocity estimation
+
+        # Use the last two positions and times
+        z1 = positions[-1].z()
+        z0 = positions[-2].z()
+        t1 = times[-1]
+        t0 = times[-2]
+        return (z1 - z0) / (t1 - t0)
+
+
+    def estimate_acceleration(self, positions: list[Vector], times: list[float]) -> float | None:
+        """
+        Estimates the vertical acceleration using the central difference method.
+
+        Args:
+            positions (list[Vector]): A list of past position vectors.
+            times (list[float]): A list of corresponding times.
+
+        Returns:
+            float | None: The estimated vertical acceleration, or None if insufficient data.
+        """
+        if len(positions) < 3:
+            return None  # Not enough data for acceleration estimation
+
+        # Use the last three positions and times for central difference
+        z2 = positions[-1].z()
+        z1 = positions[-2].z()
+        z0 = positions[-3].z()
+        t2 = times[-1]
+        t1 = times[-2]
+        t0 = times[-3]
+        return (z2 - 2*z1 + z0) / ((t2 - t1) * (t1 - t0))
 
 
 
@@ -272,27 +322,41 @@ class ControlSystem:
         if time < self.prev_update_time + self.period:
             return self.prev_command
         
-        vel_est = (position.z() - self.prev_position.z()) / (time - self.prev_update_time)
-        self.prev_position = position
         self.prev_update_time = time
 
-        """
-        # Swap states when needed
-        # TODO: There needs to be a better way to do this (the state machine should do it with a single method call)
-        if self.state_machine.state == diving:
-            if position.z() <= self.target_depth:
-                self.target_depth = self.min_depth
-                self.state_machine.next()
-        else:
-            if position.z() >= self.target_depth:
-                self.target_depth = self.max_depth
-                self.state_machine.next()
-        """
+        # Store the current position and time
+        self.previous_positions.append(position)
+        self.previous_times.append(time)
+
+        # Keep only the last 'num_past_positions'
+        if len(self.previous_positions) > self.num_past_positions:
+            self.previous_positions.pop(0)
+            self.previous_times.pop(0)
+
+        # Estimate velocity and acceleration
+        velocity_estimate = self.estimate_velocity(self.previous_positions, self.previous_times)
+        acceleration_estimate = self.estimate_acceleration(self.previous_positions, self.previous_times)
+
+        # If velocity or acceleration cannot be estimated, use the given velocity and acceleration.
+        #  This will happen in the first few time steps.  We check for None
+        velocity_for_pid = velocity_estimate if velocity_estimate is not None else velocity.z()
+        acceleration_for_pid = acceleration_estimate if acceleration_estimate is not None else acceleration.z()
+        
+
+        # REMOVED logic since we are manually setting target_depth
+        # if self.state_machine.state == diving:
+        #     if position.z() <= self.target_depth:
+        #         self.target_depth = self.min_depth
+        #         self.state_machine.next()
+        # else:
+        #     if position.z() >= self.target_depth:
+        #         self.target_depth = self.max_depth
+        #         self.state_machine.next()
 
         # depth -> v_vel -> v_acc
         pid_depth_output = self.pid_depth.update(self.target_depth, position.z(), time)
-        pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, vel_est, time)
-        pid_v_acc_output = self.pid_v_acc.update(pid_v_vel_output, acceleration.z(), time)
+        pid_v_vel_output = self.pid_v_vel.update(pid_depth_output, velocity_for_pid, time)
+        pid_v_acc_output = self.pid_v_acc.update(pid_v_vel_output, acceleration_for_pid, time)
         
 
         self.logger.control_log.append([time, self.target_depth, pid_depth_output, pid_v_vel_output, pid_v_acc_output])
